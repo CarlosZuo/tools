@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel文本字段提取工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+        
+        .panel:hover {
+            transform: translateY(-5px);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .panel-title {
+            font-size: 1.4rem;
+            color: #1a2a6c;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-clear {
+            background: #e74c3c;
+        }
+        
+        .btn-clear:hover {
+            background: #c0392b;
+        }
+        
+        .btn-download {
+            background: #2ecc71;
+        }
+        
+        .btn-download:hover {
+            background: #27ae60;
+        }
+        
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(52, 152, 219, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .file-upload-area:hover {
+            background: rgba(52, 152, 219, 0.2);
+        }
+        
+        .file-upload-area i {
+            font-size: 48px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .file-upload-area p {
+            margin: 10px 0;
+            color: #555;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f1f8ff;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .progress-container {
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .result-container {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .result-table-container {
+            max-height: 400px;
+            overflow: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        th {
+            background: #f5f5f5;
+            position: sticky;
+            top: 0;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .error-row {
+            background: rgba(231, 76, 60, 0.1) !important;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        @media (max-width: 768px) {
+            .panel {
+                padding: 15px;
+            }
+            
+            .file-upload-area {
+                padding: 20px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Excel文本字段提取工具</h1>
+            <p class="subtitle">从Excel文件中提取"是否可解答"、"标准答案"和"解题思路"字段</p>
+        </header>
+        <div class="main-content">
+            <!-- 文件上传面板 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <i class="fas fa-file-excel"></i> 上传Excel文件
+                    </h2>
+                </div>
+                <div class="file-upload-area" id="dropArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>点击或拖拽Excel文件到此处</h3>
+                    <p>支持 .xlsx 和 .xls 格式</p>
+                    <p>文件应包含"ID"和"Content"列（或类似名称）</p>
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
+                </div>
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <i class="fas fa-file-excel"></i>
+                    <div>
+                        <div id="fileName">文件名</div>
+                        <div id="fileSize">文件大小</div>
+                        <div id="fileRowCount">总行数：0</div>
+                    </div>
+                </div>
+                <div class="progress-container" id="progressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressText">0%</span>
+                        <span id="processedRows">已处理 0 行</span>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn" id="processBtn" disabled>
+                        <i class="fas fa-cogs"></i> 处理文件 </button>
+                    <button class="btn btn-download" id="downloadBtn" disabled>
+                        <i class="fas fa-download"></i> 下载结果 </button>
+                    <button class="btn btn-clear" id="clearBtn">
+                        <i class="fas fa-trash"></i> 清空 </button>
+                </div>
+            </div>
+            <!-- 结果面板 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <i class="fas fa-table"></i> 处理结果
+                    </h2>
+                </div>
+                <div class="result-container" id="resultContainer">
+                    <div class="result-table-container">
+                        <table id="resultTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>是否可解答</th>
+                                    <th>标准答案</th>
+                                    <th>解题思路</th>
+                                    <th>提取状态</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultBody">
+                                <!-- 结果行将通过JavaScript添加 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <span id="processTime">处理时间: 0ms</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-file-excel"></i>
+                            <span id="processedRowsCount">处理行数: 0</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="errorRows">异常行数: 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="notification" id="notification">
+            <i class="fas fa-check-circle"></i>
+            <span id="notificationText">消息通知</span>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const dropArea = document.getElementById('dropArea');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const fileSize = document.getElementById('fileSize');
+            const fileRowCount = document.getElementById('fileRowCount');
+            const processBtn = document.getElementById('processBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const processedRows = document.getElementById('processedRows');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultBody = document.getElementById('resultBody');
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            const processTime = document.getElementById('processTime');
+            const processedRowsCount = document.getElementById('processedRowsCount');
+            const errorRows = document.getElementById('errorRows');
+            
+            let workbook = null;
+            let processedData = [];
+            let processingTimer = null;
+            let startTime = null;
+            
+            // 点击上传区域触发文件选择
+            dropArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // 拖拽事件处理
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.style.borderColor = '#2ecc71';
+                dropArea.style.background = 'rgba(46, 204, 113, 0.2)';
+            }
+            
+            function unhighlight() {
+                dropArea.style.borderColor = '#3498db';
+                dropArea.style.background = 'rgba(52, 152, 219, 0.1)';
+            }
+            
+            // 文件拖放处理
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFile(files[0]);
+                }
+            }
+            
+            // 文件选择处理
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    handleFile(this.files[0]);
+                }
+            });
+            
+            // 处理上传的文件
+            function handleFile(file) {
+                if (!file.name.match(/\.(xlsx|xls)$/i)) {
+                    showNotification("请上传Excel文件 (.xlsx 或 .xls)", "error");
+                    return;
+                }
+                
+                // 显示文件信息
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                fileInfo.style.display = 'flex';
+                
+                // 读取Excel文件
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // 获取第一个工作表
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                        
+                        // 计算行数（减去标题行）
+                        const rowCount = Math.max(0, jsonData.length - 1);
+                        fileRowCount.textContent = `总行数：${rowCount}`;
+                        
+                        // 启用处理按钮
+                        processBtn.disabled = false;
+                    } catch (error) {
+                        console.error("读取Excel文件错误:", error);
+                        showNotification("读取Excel文件失败", "error");
+                        workbook = null;
+                        processBtn.disabled = true;
+                    }
+                };
+                
+                reader.readAsArrayBuffer(file);
+            }
+            
+            // 格式化文件大小
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // 处理按钮点击事件
+            processBtn.addEventListener('click', processExcel);
+            
+            // 清空按钮点击事件
+            clearBtn.addEventListener('click', function() {
+                fileInput.value = '';
+                fileInfo.style.display = 'none';
+                progressContainer.style.display = 'none';
+                resultContainer.style.display = 'none';
+                processBtn.disabled = true;
+                downloadBtn.disabled = true;
+                workbook = null;
+                processedData = [];
+                resultBody.innerHTML = '';
+                
+                showNotification("已重置所有内容", "success");
+            });
+            
+            // 下载按钮点击事件
+            downloadBtn.addEventListener('click', downloadResult);
+            
+            // 显示通知
+            function showNotification(message, type) {
+                notificationText.textContent = message;
+                notification.className = 'notification';
+                notification.classList.add('show');
+                if (type === 'error') {
+                    notification.classList.add('error');
+                }
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // 处理Excel文件
+            function processExcel() {
+                if (!workbook) {
+                    showNotification("请先上传Excel文件", "error");
+                    return;
+                }
+                
+                // 显示进度条
+                progressContainer.style.display = 'block';
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                processedRows.textContent = '已处理 0 行';
+                
+                // 获取工作表数据
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                // 获取列名（第一行）
+                const headers = jsonData[0];
+                
+                // 匹配列名
+                const colMap = validateColumns(headers);
+                
+                // 如果没有找到必要的列
+                if (!colMap.id || !colMap.content) {
+                    showNotification("未找到必要的列（ID或Content）", "error");
+                    return;
+                }
+                
+                // 处理数据
+                processedData = [];
+                let errorCount = 0;
+                const totalRows = jsonData.length - 1; // 减去标题行
+                let processedCount = 0;
+                
+                // 清空结果表格
+                resultBody.innerHTML = '';
+                resultContainer.style.display = 'block';
+                
+                // 开始计时
+                startTime = new Date();
+                
+                // 使用定时器模拟进度更新（实际处理是同步的）
+                processingTimer = setInterval(() => {
+                    const percentage = Math.floor((processedCount / totalRows) * 100);
+                    progressFill.style.width = `${percentage}%`;
+                    progressText.textContent = `${percentage}%`;
+                    processedRows.textContent = `已处理 ${processedCount} / ${totalRows} 行`;
+                }, 100);
+                
+                // 处理每一行数据（跳过标题行）
+                for (let i = 1; i < jsonData.length; i++) {
+                    const row = jsonData[i];
+                    const id = row[colMap.id.index] || '';
+                    const content = row[colMap.content.index] || '';
+                    
+                    // 提取字段
+                    const fields = extractFields(content);
+                    
+                    // 记录异常行
+                    if (fields['提取是否异常']) {
+                        errorCount++;
+                    }
+                    
+                    // 添加到结果数据
+                    processedData.push({
+                        id: id,
+                        content: content,
+                        '是否可解答': fields['是否可解答'],
+                        '标准答案': fields['标准答案'],
+                        '解题思路': fields['解题思路'],
+                        '提取是否异常': fields['提取是否异常']
+                    });
+                    
+                    // 在表格中添加一行（只显示前20行）
+                    if (processedCount < 20) {
+                        const rowClass = fields['提取是否异常'] ? 'error-row' : '';
+                        resultBody.innerHTML += `
+                            <tr class="${rowClass}">
+                                <td>${id}</td>
+                                <td>${fields['是否可解答'] !== null ? fields['是否可解答'] : 'N/A'}</td>
+                                <td>${truncateText(fields['标准答案'] || '', 30)}</td>
+                                <td>${truncateText(fields['解题思路'] || '', 30)}</td>
+                                <td>${fields['提取是否异常'] ? '<i class="fas fa-exclamation-circle" style="color: #e74c3c;"></i> 异常' : '<i class="fas fa-check-circle" style="color: #2ecc71;"></i> 正常'}</td>
+                            </tr>
+                        `;
+                    }
+                    processedCount++;
+                }
+                // 更新进度到100%
+                progressFill.style.width = '100%';
+                progressText.textContent = '100%';
+                processedRows.textContent = `已处理 ${processedCount} 行`;
+                
+                // 结束计时器
+                clearInterval(processingTimer);
+                
+                // 计算处理时间
+                const endTime = new Date();
+                const timeDiff = endTime - startTime;
+                processTime.textContent = `处理时间: ${timeDiff}ms`;
+                processedRowsCount.textContent = `处理行数: ${processedCount}`;
+                errorRows.textContent = `异常行数: ${errorCount}`;
+                
+                // 启用下载按钮
+                downloadBtn.disabled = false;
+                
+                showNotification(`处理完成！共处理 ${processedCount} 行数据，其中 ${errorCount} 行异常`, "success");
+            }
+            
+            // 列名匹配逻辑
+            function validateColumns(headers) {
+                const columnMap = {
+                    'id': ['id', 'ID', '编号', '题号'],
+                    'content': ['content', 'Content', '内容', '题目内容']
+                };
+                const matched = {};
+                for (const colType in columnMap) {
+                    const candidates = columnMap[colType];
+                    let found = false;
+                    for (let i = 0; i < headers.length; i++) {
+                        const header = String(headers[i] || '').trim();
+                        const cleanHeader = header.replace(/\s+/g, '').toLowerCase();
+                        for (const candidate of candidates) {
+                            const cleanCandidate = candidate.replace(/\s+/g, '').toLowerCase();
+                            if (cleanHeader === cleanCandidate) {
+                                matched[colType] = {
+                                    name: header,
+                                    index: i
+                                };
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) break;
+                    }
+                    if (!found) {
+                        matched[colType] = null;
+                    }
+                }
+                return matched;
+            }
+            // 提取内容中的关键字段
+            function extractFields(content) {
+                const result = {
+                    '是否可解答': null,
+                    '标准答案': '',
+                    '解题思路': '',
+                    '提取是否异常': false
+                };
+                if (!content) {
+                    result['提取是否异常'] = true;
+                    return result;
+                }
+                const contentStr = String(content);
+                try {
+                    // 1. 提取是否可解答
+                    const solvablePattern = /###\s*是否可解答[：:]\s*($$?(true|false)$$?)/i;
+                    const solvableMatch = contentStr.match(solvablePattern);
+                    if (solvableMatch) {
+                        const solvableValue = solvableMatch[1].toLowerCase().replace(/[$$$$]/g, '');
+                        result['是否可解答'] = solvableValue === 'true';
+                    } else {
+                        result['提取是否异常'] = true;
+                    }
+                    // 2. 提取标准答案
+                    const stdAnswerPattern = /###\s*标准答案[：:]\s*([\s\S]*?)(?=\s*###|$)/i;
+                    const stdAnswerMatch = contentStr.match(stdAnswerPattern);
+                    if (stdAnswerMatch) {
+                        result['标准答案'] = stdAnswerMatch[1].trim();
+                    } else {
+                        result['提取是否异常'] = true;
+                    }
+                    // 3. 提取解题思路
+                    const stepsPattern = /###\s*解题思路[：:]\s*([\s\S]*?)(?=\s*###|$)/i;
+                    const stepsMatch = contentStr.match(stepsPattern);
+                    if (stepsMatch) {
+                        result['解题思路'] = stepsMatch[1].trim();
+                    } else {
+                        result['提取是否异常'] = true;
+                    }
+                } catch (e) {
+                    console.error("提取字段时出错:", e);
+                    result['提取是否异常'] = true;
+                }
+                return result;
+            }
+            // 下载处理结果
+            function downloadResult() {
+                if (processedData.length === 0) {
+                    showNotification("没有处理结果可下载", "error");
+                    return;
+                }
+                try {
+                    // 创建工作表
+                    const ws = XLSX.utils.json_to_sheet(processedData);
+                    
+                    // 创建工作簿
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "处理结果");
+                    // 生成Excel文件
+                    XLSX.writeFile(wb, "处理结果.xlsx");
+                    showNotification("结果已下载为Excel文件", "success");
+                } catch (error) {
+                    console.error("生成Excel文件失败:", error);
+                    showNotification("生成Excel文件失败", "error");
+                }
+            }
+            // 截断长文本
+            function truncateText(text, maxLength) {
+                if (text.length <= maxLength) return text;
+                return text.substring(0, maxLength) + '...';
+            }
+        });
+    </script>
+</body>
+</html>

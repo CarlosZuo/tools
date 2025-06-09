@@ -359,42 +359,38 @@
             margin: 0 auto 15px;
         }
         
-        .feature-section {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 30px;
-            justify-content: center;
-        }
-        
-        .feature-card {
-            background: rgba(255, 255, 255, 0.1);
+        .extraction-example {
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
-            padding: 20px;
-            width: calc(33% - 20px);
-            min-width: 250px;
-            color: white;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            margin-top: 20px;
+            color: #fff;
+            border-left: 4px solid #2ecc71;
         }
         
-        .feature-card i {
-            font-size: 2rem;
-            margin-bottom: 15px;
-            color: #2ecc71;
-        }
-        
-        .feature-card h3 {
+        .extraction-example h3 {
             margin-bottom: 10px;
-            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            color: rgba(255, 255, 255, 0.7);
+        .extraction-example pre {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
             font-size: 0.9rem;
-            padding: 20px;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+        
+        .extraction-example .field {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(46, 204, 113, 0.3);
+            border-radius: 4px;
+            margin: 0 3px;
         }
         
         @keyframes spin {
@@ -412,10 +408,6 @@
                 padding: 15px;
             }
             
-            .feature-card {
-                width: 100%;
-            }
-            
             .file-upload-area {
                 padding: 20px;
             }
@@ -428,10 +420,6 @@
             th, td {
                 padding: 8px 10px;
                 font-size: 0.85rem;
-            }
-            
-            .feature-section {
-                flex-direction: column;
             }
         }
     </style>
@@ -545,23 +533,58 @@
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="feature-section">
-            <div class="feature-card">
-                <i class="fas fa-bolt"></i>
-                <h3>快速处理</h3>
-                <p>使用高效算法快速处理Excel文件，支持大型数据集</p>
-            </div>
-            <div class="feature-card">
-                <i class="fas fa-shield-alt"></i>
-                <h3>隐私保护</h3>
-                <p>所有处理均在浏览器中完成，文件不上传至服务器</p>
-            </div>
-            <div class="feature-card">
-                <i class="fas fa-mobile-alt"></i>
-                <h3>跨平台支持</h3>
-                <p>完美适配桌面和移动设备，随时随地处理文件</p>
+            
+            <!-- 提取示例 -->
+            <div class="extraction-example">
+                <h3><i class="fas fa-lightbulb"></i> 字段提取示例</h3>
+                <p>工具将从Content字段中提取以下三个关键字段：</p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li><span class="field">是否可解答</span>：从<span class="field">### 是否可解答：[true]</span>或<span class="field">### 是否可解答：[false]</span>中提取</li>
+                    <li><span class="field">标准答案</span>：提取<span class="field">### 标准答案：</span>后的所有内容</li>
+                    <li><span class="field">解题思路</span>：提取<span class="field">### 解题思路：</span>后的所有内容</li>
+                </ul>
+                <pre id="exampleContent">
+### 是否可解答：[true]
+### 标准答案：
+解：
+$$\begin{flalign*} 
+& \text{解不等式组：} & \\ 
+&\left\{ \begin{aligned} 
+5x - 2 &> 3(x + 1) \quad \text{①} \\ 
+\frac{1}{2}x - 1 &\leq 7 - \frac{3}{2}x \quad \text{②} 
+\end{aligned} \right. & \\[1em] 
+& \text{解①：} & \\ 
+&5x - 2 > 3x + 3 & \\ 
+&5x - 3x > 3 + 2 & \\ 
+&2x > 5 & \\ 
+&x > \frac{5}{2} & \\[1em] 
+& \text{解②：} & \\ 
+&\frac{1}{2}x - 1 \leq 7 - \frac{3}{2}x & \\ 
+&\frac{1}{2}x + \frac{3}{2}x \leq 7 + 1 & \\ 
+&2x \leq 8 & \\ 
+&x \leq 4 & \\[1em] 
+& \text{综合解集：} & \\ 
+&\begin{cases} 
+x > \frac{5}{2} \\ 
+x \leq 4 
+\end{cases} & \\[1em] 
+& \therefore \text{不等式组的解集为：} \frac{5}{2} < x \leq 4 & 
+\end{flalign*}$$
+### 解题思路：
+1. **解第一个不等式**： 
+① 展开右边：\(3(x + 1) = 3x + 3\) 
+② 移项整理：\(5x - 3x > 3 + 2\) → \(2x > 5\) 
+③ 解得：\(x > \frac{5}{2}\)（即\(x > 2.5\)）
+
+2. **解第二个不等式**： 
+① 消分母：两边乘2得 \(x - 2 \leq 14 - 3x\) 
+② 移项整理：\(x + 3x \leq 14 + 2\) → \(4x \leq 16\) 
+③ 解得：\(x \leq 4\)
+
+3. **综合解集**： 
+① 第一个不等式的解集为 \(x > 2.5\) 
+② 第二个不等式的解集为 \(x \leq 4\) 
+③ 交集为 \(2.5 < x \leq 4\)</pre>
             </div>
         </div>
         
@@ -837,22 +860,6 @@
                             '提取是否异常': fields['提取是否异常']
                         });
                         
-                        // 在表格中添加一行（只显示前20行）
-                        if (processedCount < 20) {
-                            const rowClass = fields['提取是否异常'] ? 'error-row' : '';
-                            resultBody.innerHTML += `
-                                <tr class="${rowClass}">
-                                    <td>${id}</td>
-                                    <td>${fields['是否可解答'] !== null ? (fields['是否可解答'] ? '是' : '否') : 'N/A'}</td>
-                                    <td>${truncateText(fields['标准答案'] || '', 30)}</td>
-                                    <td>${truncateText(fields['解题思路'] || '', 30)}</td>
-                                    <td>${fields['提取是否异常'] ? 
-                                        '<span class="status-badge status-error"><i class="fas fa-exclamation-circle"></i> 异常</span>' : 
-                                        '<span class="status-badge status-success"><i class="fas fa-check-circle"></i> 正常</span>'}</td>
-                                </tr>
-                            `;
-                        }
-                        
                         processedCount++;
                     }
                     
@@ -889,12 +896,50 @@
                         resultStatus.classList.remove('status-error');
                         resultStatus.classList.add('status-success');
                         
+                        // 渲染结果表格
+                        renderResults();
+                        
                         showNotification(`处理完成！共处理 ${processedCount} 行数据，其中 ${errorCount} 行异常`, "success");
                     }
                 }
                 
                 // 开始分块处理（每块100行）
                 processChunk(1, 100);
+            }
+            
+            // 渲染结果到表格
+            function renderResults() {
+                resultBody.innerHTML = '';
+                
+                // 只显示前20行结果
+                const displayCount = Math.min(20, processedData.length);
+                for (let i = 0; i < displayCount; i++) {
+                    const row = processedData[i];
+                    const rowClass = row['提取是否异常'] ? 'error-row' : '';
+                    resultBody.innerHTML += `
+                        <tr class="${rowClass}">
+                            <td>${row.id}</td>
+                            <td>${row['是否可解答'] !== null ? (row['是否可解答'] ? '是' : '否') : 'N/A'}</td>
+                            <td>${truncateText(row['标准答案'] || '', 30)}</td>
+                            <td>${truncateText(row['解题思路'] || '', 30)}</td>
+                            <td>${row['提取是否异常'] ? 
+                                '<span class="status-badge status-error"><i class="fas fa-exclamation-circle"></i> 异常</span>' : 
+                                '<span class="status-badge status-success"><i class="fas fa-check-circle"></i> 正常</span>'}</td>
+                        </tr>
+                    `;
+                }
+                
+                // 如果还有更多行，显示提示
+                if (processedData.length > 20) {
+                    resultBody.innerHTML += `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 15px; color: #7f8c8d;">
+                                <i class="fas fa-info-circle"></i> 
+                                只显示前20行，完整结果请下载Excel文件查看（共${processedData.length}行）
+                            </td>
+                        </tr>
+                    `;
+                }
             }
             
             // 列名匹配逻辑
@@ -937,7 +982,7 @@
                 return matched;
             }
             
-            // 提取内容中的关键字段
+            // 提取内容中的关键字段 - 已修复"是否可解答"提取问题
             function extractFields(content) {
                 const result = {
                     '是否可解答': null,
@@ -954,14 +999,21 @@
                 const contentStr = String(content);
                 
                 try {
-                    // 1. 提取是否可解答
-                    const solvablePattern = /###\s*是否可解答[：:]\s*([^\n#]*)/i;
+                    // 1. 提取是否可解答 - 修复后的逻辑
+                    const solvablePattern = /###\s*是否可解答\s*[：:]\s*\[(true|false)\]/i;
                     const solvableMatch = contentStr.match(solvablePattern);
+                    
                     if (solvableMatch) {
-                        const solvableValue = solvableMatch[1].toLowerCase().trim();
-                        result['是否可解答'] = solvableValue === '是' || solvableValue === 'true' || solvableValue === '可以';
+                        result['是否可解答'] = solvableMatch[1].toLowerCase() === 'true';
                     } else {
-                        result['提取是否异常'] = true;
+                        // 尝试匹配不带方括号的情况
+                        const fallbackPattern = /###\s*是否可解答\s*[：:]\s*(true|false)/i;
+                        const fallbackMatch = contentStr.match(fallbackPattern);
+                        if (fallbackMatch) {
+                            result['是否可解答'] = fallbackMatch[1].toLowerCase() === 'true';
+                        } else {
+                            result['提取是否异常'] = true;
+                        }
                     }
                     
                     // 2. 提取标准答案

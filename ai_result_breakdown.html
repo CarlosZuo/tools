@@ -140,6 +140,7 @@
             transition: all 0.3s ease;
             background: rgba(52, 152, 219, 0.1);
             margin-bottom: 20px;
+            position: relative;
         }
         
         .file-upload-area:hover {
@@ -155,6 +156,16 @@
         .file-upload-area p {
             margin: 10px 0;
             color: #555;
+        }
+        
+        #fileInput {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
         }
         
         .file-info {
@@ -300,21 +311,25 @@
             <h1>Excel文本字段提取工具</h1>
             <p class="subtitle">从Excel文件中提取"是否可解答"、"标准答案"和"解题思路"字段</p>
         </header>
+        
         <div class="main-content">
             <!-- 文件上传面板 -->
             <div class="panel">
                 <div class="panel-header">
                     <h2 class="panel-title">
-                        <i class="fas fa-file-excel"></i> 上传Excel文件
+                        <i class="fas fa-file-excel"></i>
+                        上传Excel文件
                     </h2>
                 </div>
+                
                 <div class="file-upload-area" id="dropArea">
+                    <input type="file" id="fileInput" accept=".xlsx, .xls">
                     <i class="fas fa-cloud-upload-alt"></i>
                     <h3>点击或拖拽Excel文件到此处</h3>
                     <p>支持 .xlsx 和 .xls 格式</p>
                     <p>文件应包含"ID"和"Content"列（或类似名称）</p>
-                    <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
                 </div>
+                
                 <div id="fileInfo" class="file-info" style="display: none;">
                     <i class="fas fa-file-excel"></i>
                     <div>
@@ -323,6 +338,7 @@
                         <div id="fileRowCount">总行数：0</div>
                     </div>
                 </div>
+                
                 <div class="progress-container" id="progressContainer" style="display: none;">
                     <div class="progress-bar">
                         <div class="progress-fill" id="progressFill"></div>
@@ -332,22 +348,32 @@
                         <span id="processedRows">已处理 0 行</span>
                     </div>
                 </div>
+                
                 <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: center;">
                     <button class="btn" id="processBtn" disabled>
-                        <i class="fas fa-cogs"></i> 处理文件 </button>
+                        <i class="fas fa-cogs"></i>
+                        处理文件
+                    </button>
                     <button class="btn btn-download" id="downloadBtn" disabled>
-                        <i class="fas fa-download"></i> 下载结果 </button>
+                        <i class="fas fa-download"></i>
+                        下载结果
+                    </button>
                     <button class="btn btn-clear" id="clearBtn">
-                        <i class="fas fa-trash"></i> 清空 </button>
+                        <i class="fas fa-trash"></i>
+                        清空
+                    </button>
                 </div>
             </div>
+            
             <!-- 结果面板 -->
             <div class="panel">
                 <div class="panel-header">
                     <h2 class="panel-title">
-                        <i class="fas fa-table"></i> 处理结果
+                        <i class="fas fa-table"></i>
+                        处理结果
                     </h2>
                 </div>
+                
                 <div class="result-container" id="resultContainer">
                     <div class="result-table-container">
                         <table id="resultTable">
@@ -365,6 +391,7 @@
                             </tbody>
                         </table>
                     </div>
+                    
                     <div class="stats">
                         <div class="stat-item">
                             <i class="fas fa-clock"></i>
@@ -382,11 +409,13 @@
                 </div>
             </div>
         </div>
+        
         <div class="notification" id="notification">
             <i class="fas fa-check-circle"></i>
             <span id="notificationText">消息通知</span>
         </div>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('fileInput');
@@ -416,8 +445,10 @@
             let startTime = null;
             
             // 点击上传区域触发文件选择
-            dropArea.addEventListener('click', function() {
-                fileInput.click();
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    handleFile(this.files[0]);
+                }
             });
             
             // 拖拽事件处理
@@ -459,13 +490,6 @@
                     handleFile(files[0]);
                 }
             }
-            
-            // 文件选择处理
-            fileInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    handleFile(this.files[0]);
-                }
-            });
             
             // 处理上传的文件
             function handleFile(file) {
@@ -638,8 +662,10 @@
                             </tr>
                         `;
                     }
+                    
                     processedCount++;
                 }
+                
                 // 更新进度到100%
                 progressFill.style.width = '100%';
                 progressText.textContent = '100%';
@@ -667,13 +693,17 @@
                     'id': ['id', 'ID', '编号', '题号'],
                     'content': ['content', 'Content', '内容', '题目内容']
                 };
+                
                 const matched = {};
+                
                 for (const colType in columnMap) {
                     const candidates = columnMap[colType];
                     let found = false;
+                    
                     for (let i = 0; i < headers.length; i++) {
                         const header = String(headers[i] || '').trim();
                         const cleanHeader = header.replace(/\s+/g, '').toLowerCase();
+                        
                         for (const candidate of candidates) {
                             const cleanCandidate = candidate.replace(/\s+/g, '').toLowerCase();
                             if (cleanHeader === cleanCandidate) {
@@ -685,14 +715,18 @@
                                 break;
                             }
                         }
+                        
                         if (found) break;
                     }
+                    
                     if (!found) {
                         matched[colType] = null;
                     }
                 }
+                
                 return matched;
             }
+            
             // 提取内容中的关键字段
             function extractFields(content) {
                 const result = {
@@ -701,11 +735,14 @@
                     '解题思路': '',
                     '提取是否异常': false
                 };
+                
                 if (!content) {
                     result['提取是否异常'] = true;
                     return result;
                 }
+                
                 const contentStr = String(content);
+                
                 try {
                     // 1. 提取是否可解答
                     const solvablePattern = /###\s*是否可解答[：:]\s*($$?(true|false)$$?)/i;
@@ -716,6 +753,7 @@
                     } else {
                         result['提取是否异常'] = true;
                     }
+                    
                     // 2. 提取标准答案
                     const stdAnswerPattern = /###\s*标准答案[：:]\s*([\s\S]*?)(?=\s*###|$)/i;
                     const stdAnswerMatch = contentStr.match(stdAnswerPattern);
@@ -724,6 +762,7 @@
                     } else {
                         result['提取是否异常'] = true;
                     }
+                    
                     // 3. 提取解题思路
                     const stepsPattern = /###\s*解题思路[：:]\s*([\s\S]*?)(?=\s*###|$)/i;
                     const stepsMatch = contentStr.match(stepsPattern);
@@ -751,14 +790,17 @@
                     // 创建工作簿
                     const wb = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(wb, ws, "处理结果");
+                    
                     // 生成Excel文件
                     XLSX.writeFile(wb, "处理结果.xlsx");
+                    
                     showNotification("结果已下载为Excel文件", "success");
                 } catch (error) {
                     console.error("生成Excel文件失败:", error);
                     showNotification("生成Excel文件失败", "error");
                 }
             }
+            
             // 截断长文本
             function truncateText(text, maxLength) {
                 if (text.length <= maxLength) return text;

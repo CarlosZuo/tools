@@ -106,7 +106,7 @@
             transition: transform 0.3s ease;
             position: relative;
             overflow: hidden;
-            border: 1px solid var(--gh-border);
+            border: 极细边框 solid var(--gh-border);
         }
         
         .panel::before {
@@ -167,7 +167,7 @@
             box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.3);
         }
         
-        .btn-clear {
+极细边框         .btn-clear {
             color: var(--gh-error);
             border-color: rgba(218, 54, 51, 0.5);
         }
@@ -215,7 +215,7 @@
         
         .file-upload-area i {
             font-size: 48px;
-            color: var(--gh-accent);
+            color: var(--极细边框gh-accent);
             margin-bottom: 15px;
             transition: transform 0.3s ease;
         }
@@ -466,7 +466,7 @@
                     <i class="fas fa-cloud-upload-alt"></i>
                     <h3>点击或拖拽Excel文件到此处</h3>
                     <p>支持 .xlsx 和 .xls 格式</p>
-                    <p>文件应包含"ID"和"Content"列（或类似名称）</p>
+                    <p>文件应包含"ID"和"Content"列（或类似名称）</极细边框p>
                 </div>
                 
                 <div id="fileInfo" class="file-info" style="display: none;">
@@ -670,7 +670,7 @@
                         
                         // 获取第一个工作表
                         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                        const jsonData = X极细.XLSX.utils.sheet_to_json(worksheet, {header: 1});
                         
                         // 计算行数（减去标题行）
                         const rowCount = Math.max(0, jsonData.length - 1);
@@ -805,7 +805,7 @@
                         const id = row[colMap.id.index] || '';
                         const content = row[colMap.content.index] || '';
                         
-                        // 提取字段
+                        // 提取字段 - 修复版
                         const fields = extractFields(content);
                         
                         // 记录异常行
@@ -907,7 +907,7 @@
                 return matched;
             }
             
-            // 提取内容中的关键字段
+            // 修复版: 提取内容中的关键字段
             function extractFields(content) {
                 const result = {
                     '是否可解答': null,
@@ -924,24 +924,19 @@
                 const contentStr = String(content);
                 
                 try {
-                    // 1. 提取是否可解答
-                    const solvablePattern = /###\s*是否可解答\s*[：:]\s*$$(true|false)$$/i;
+                    // 1. 修复版：提取是否可解答 - 增强正则兼容性
+                    const solvablePattern = /###\s*是否可解答\s*[：:]\s*(?:$$(true|false)$$|(true|false))/i;
                     const solvableMatch = contentStr.match(solvablePattern);
                     
                     if (solvableMatch) {
-                        result['是否可解答'] = solvableMatch[1].toLowerCase() === 'true';
+                        // 匹配方括号模式或无方括号模式
+                        const value = solvableMatch[1] || solvableMatch[2];
+                        result['是否可解答'] = (value || '').toLowerCase() === 'true';
                     } else {
-                        // 尝试匹配不带方括号的情况
-                        const fallbackPattern = /###\s*是否可解答\s*[：:]\s*(true|false)/i;
-                        const fallbackMatch = contentStr.match(fallbackPattern);
-                        if (fallbackMatch) {
-                            result['是否可解答'] = fallbackMatch[1].toLowerCase() === 'true';
-                        } else {
-                            result['提取是否异常'] = true;
-                        }
+                        result['提取是否异常'] = true;
                     }
                     
-                    // 2. 提取标准答案
+                    // 2. 提取标准答案 - 支持换行
                     const stdAnswerPattern = /###\s*标准答案[：:]\s*([\s\S]*?)(?=\s*###|$)/i;
                     const stdAnswerMatch = contentStr.match(stdAnswerPattern);
                     if (stdAnswerMatch) {
@@ -950,7 +945,7 @@
                         result['提取是否异常'] = true;
                     }
                     
-                    // 3. 提取解题思路
+                    // 3. 提取解题思路 - 支持换行
                     const stepsPattern = /###\s*解题思路[：:]\s*([\s\S]*?)(?=\s*###|$)/i;
                     const stepsMatch = contentStr.match(stepsPattern);
                     if (stepsMatch) {
@@ -962,6 +957,7 @@
                     console.error("提取字段时出错:", e);
                     result['提取是否异常'] = true;
                 }
+                
                 return result;
             }
             

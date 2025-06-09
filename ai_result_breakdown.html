@@ -240,37 +240,6 @@
             animation: fadeIn 0.5s ease;
         }
         
-        .result-summary {
-            text-align: center;
-            padding: 30px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .result-summary i {
-            font-size: 48px;
-            color: #2ecc71;
-            margin-bottom: 15px;
-        }
-        
-        .result-summary h3 {
-            font-size: 1.8rem;
-            color: #1a2a6c;
-            margin-bottom: 10px;
-        }
-        
-        .result-summary p {
-            font-size: 1.1rem;
-            color: #555;
-            margin: 5px 0;
-        }
-        
-        .result-summary .highlight {
-            font-weight: 700;
-            color: #e74c3c;
-        }
-        
         .stats {
             display: flex;
             justify-content: space-between;
@@ -411,6 +380,11 @@
                 flex-direction: column;
                 gap: 10px;
             }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -490,14 +464,6 @@
                 </div>
                 
                 <div class="result-container" id="resultContainer">
-                    <div class="result-summary" id="resultSummary" style="display: none;">
-                        <i class="fas fa-check-circle"></i>
-                        <h3>处理完成！</h3>
-                        <p>共处理 <span class="highlight" id="totalProcessedCount">0</span> 行数据</p>
-                        <p>其中 <span class="highlight" id="totalErrorCount">0</span> 行提取异常</p>
-                        <p>请点击"下载结果"按钮获取完整数据</p>
-                    </div>
-                    
                     <div class="stats">
                         <div class="stat-item">
                             <i class="fas fa-clock"></i>
@@ -598,9 +564,6 @@ x \leq 4
             const errorRows = document.getElementById('errorRows');
             const loadingSpinner = document.getElementById('loadingSpinner');
             const resultStatus = document.getElementById('resultStatus');
-            const resultSummary = document.getElementById('resultSummary');
-            const totalProcessedCount = document.getElementById('totalProcessedCount');
-            const totalErrorCount = document.getElementById('totalErrorCount');
             
             let workbook = null;
             let processedData = [];
@@ -730,7 +693,6 @@ x \leq 4
                 fileInfo.style.display = 'none';
                 progressContainer.style.display = 'none';
                 resultContainer.style.display = 'none';
-                resultSummary.style.display = 'none';
                 loadingSpinner.style.display = 'none';
                 processBtn.disabled = true;
                 downloadBtn.disabled = true;
@@ -867,11 +829,6 @@ x \leq 4
                         processTime.textContent = `处理时间: ${timeDiff}ms`;
                         processedRowsCount.textContent = `处理行数: ${processedCount}`;
                         errorRows.textContent = `异常行数: ${errorCount}`;
-                        
-                        // 更新结果摘要
-                        totalProcessedCount.textContent = processedCount;
-                        totalErrorCount.textContent = errorCount;
-                        resultSummary.style.display = 'block';
                         
                         // 启用下载按钮
                         downloadBtn.disabled = false;

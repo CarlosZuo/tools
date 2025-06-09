@@ -240,36 +240,35 @@
             animation: fadeIn 0.5s ease;
         }
         
-        .result-table-container {
-            max-height: 400px;
-            overflow: auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-top: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        .result-summary {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
         
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .result-summary i {
+            font-size: 48px;
+            color: #2ecc71;
+            margin-bottom: 15px;
         }
         
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
+        .result-summary h3 {
+            font-size: 1.8rem;
+            color: #1a2a6c;
+            margin-bottom: 10px;
         }
         
-        th {
-            background: #f5f5f5;
-            position: sticky;
-            top: 0;
-            font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        .result-summary p {
+            font-size: 1.1rem;
+            color: #555;
+            margin: 5px 0;
         }
         
-        tr:hover {
-            background: #f9f9f9;
+        .result-summary .highlight {
+            font-weight: 700;
+            color: #e74c3c;
         }
         
         .stats {
@@ -293,10 +292,6 @@
             background: white;
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .error-row {
-            background: rgba(231, 76, 60, 0.1) !important;
         }
         
         .notification {
@@ -416,11 +411,6 @@
                 flex-direction: column;
                 gap: 10px;
             }
-            
-            th, td {
-                padding: 8px 10px;
-                font-size: 0.85rem;
-            }
         }
     </style>
 </head>
@@ -500,21 +490,12 @@
                 </div>
                 
                 <div class="result-container" id="resultContainer">
-                    <div class="result-table-container">
-                        <table id="resultTable">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>是否可解答</th>
-                                    <th>标准答案</th>
-                                    <th>解题思路</th>
-                                    <th>提取状态</th>
-                                </tr>
-                            </thead>
-                            <tbody id="resultBody">
-                                <!-- 结果行将通过JavaScript添加 -->
-                            </tbody>
-                        </table>
+                    <div class="result-summary" id="resultSummary" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>处理完成！</h3>
+                        <p>共处理 <span class="highlight" id="totalProcessedCount">0</span> 行数据</p>
+                        <p>其中 <span class="highlight" id="totalErrorCount">0</span> 行提取异常</p>
+                        <p>请点击"下载结果"按钮获取完整数据</p>
                     </div>
                     
                     <div class="stats">
@@ -610,7 +591,6 @@ x \leq 4
             const progressText = document.getElementById('progressText');
             const processedRows = document.getElementById('processedRows');
             const resultContainer = document.getElementById('resultContainer');
-            const resultBody = document.getElementById('resultBody');
             const notification = document.getElementById('notification');
             const notificationText = document.getElementById('notificationText');
             const processTime = document.getElementById('processTime');
@@ -618,6 +598,9 @@ x \leq 4
             const errorRows = document.getElementById('errorRows');
             const loadingSpinner = document.getElementById('loadingSpinner');
             const resultStatus = document.getElementById('resultStatus');
+            const resultSummary = document.getElementById('resultSummary');
+            const totalProcessedCount = document.getElementById('totalProcessedCount');
+            const totalErrorCount = document.getElementById('totalErrorCount');
             
             let workbook = null;
             let processedData = [];
@@ -747,12 +730,12 @@ x \leq 4
                 fileInfo.style.display = 'none';
                 progressContainer.style.display = 'none';
                 resultContainer.style.display = 'none';
+                resultSummary.style.display = 'none';
                 loadingSpinner.style.display = 'none';
                 processBtn.disabled = true;
                 downloadBtn.disabled = true;
                 workbook = null;
                 processedData = [];
-                resultBody.innerHTML = '';
                 resultStatus.style.display = 'none';
                 
                 showNotification("已重置所有内容", "success");
@@ -816,9 +799,6 @@ x \leq 4
                 let errorCount = 0;
                 const totalRows = jsonData.length - 1; // 减去标题行
                 let processedCount = 0;
-                
-                // 清空结果表格
-                resultBody.innerHTML = '';
                 
                 // 开始计时
                 startTime = new Date();
@@ -888,6 +868,11 @@ x \leq 4
                         processedRowsCount.textContent = `处理行数: ${processedCount}`;
                         errorRows.textContent = `异常行数: ${errorCount}`;
                         
+                        // 更新结果摘要
+                        totalProcessedCount.textContent = processedCount;
+                        totalErrorCount.textContent = errorCount;
+                        resultSummary.style.display = 'block';
+                        
                         // 启用下载按钮
                         downloadBtn.disabled = false;
                         
@@ -896,50 +881,12 @@ x \leq 4
                         resultStatus.classList.remove('status-error');
                         resultStatus.classList.add('status-success');
                         
-                        // 渲染结果表格
-                        renderResults();
-                        
                         showNotification(`处理完成！共处理 ${processedCount} 行数据，其中 ${errorCount} 行异常`, "success");
                     }
                 }
                 
                 // 开始分块处理（每块100行）
                 processChunk(1, 100);
-            }
-            
-            // 渲染结果到表格
-            function renderResults() {
-                resultBody.innerHTML = '';
-                
-                // 只显示前20行结果
-                const displayCount = Math.min(20, processedData.length);
-                for (let i = 0; i < displayCount; i++) {
-                    const row = processedData[i];
-                    const rowClass = row['提取是否异常'] ? 'error-row' : '';
-                    resultBody.innerHTML += `
-                        <tr class="${rowClass}">
-                            <td>${row.id}</td>
-                            <td>${row['是否可解答'] !== null ? (row['是否可解答'] ? '是' : '否') : 'N/A'}</td>
-                            <td>${truncateText(row['标准答案'] || '', 30)}</td>
-                            <td>${truncateText(row['解题思路'] || '', 30)}</td>
-                            <td>${row['提取是否异常'] ? 
-                                '<span class="status-badge status-error"><i class="fas fa-exclamation-circle"></i> 异常</span>' : 
-                                '<span class="status-badge status-success"><i class="fas fa-check-circle"></i> 正常</span>'}</td>
-                        </tr>
-                    `;
-                }
-                
-                // 如果还有更多行，显示提示
-                if (processedData.length > 20) {
-                    resultBody.innerHTML += `
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 15px; color: #7f8c8d;">
-                                <i class="fas fa-info-circle"></i> 
-                                只显示前20行，完整结果请下载Excel文件查看（共${processedData.length}行）
-                            </td>
-                        </tr>
-                    `;
-                }
             }
             
             // 列名匹配逻辑
@@ -1062,13 +1009,6 @@ x \leq 4
                     console.error("生成Excel文件失败:", error);
                     showNotification("生成Excel文件失败", "error");
                 }
-            }
-            
-            // 截断长文本
-            function truncateText(text, maxLength) {
-                if (!text) return '';
-                if (text.length <= maxLength) return text;
-                return text.substring(0, maxLength) + '...';
             }
         });
     </script>

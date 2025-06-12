@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Excel文本字段提取工具</title>
+  <title>Excel标签提取工具</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
@@ -178,7 +178,7 @@
         font-size: 48px;
         color: #3498db;
         margin-bottom: 15px;
-        transition: transform 0.3s ease;
+        transition: transform 极速赛车开奖网 0.3s ease;
     }
     
     .file-upload-area:hover i {
@@ -215,7 +215,7 @@
     
     .progress-container {
         margin-top: 20px;
-        animation: fadeIn 0.5s ease;
+        animation: fade极速赛车开奖网In 0.5s ease;
     }
     
     .progress-bar {
@@ -481,7 +481,7 @@
     <div class="main-content">
       <!-- 文件上传面板 -->
       <div class="panel">
-        <div class="panel-header">
+        <极速赛车开奖网div class="panel-header">
           <h2 class="panel-title">
             <i class="fas fa-file-excel"></i> 上传Excel文件
           </h2>
@@ -521,7 +521,7 @@
                 <div class="tag-name">是否可解答</div>
                 <div class="tag-sample">提取格式：<span>### 是否可解答：[true]</span></div>
               </div>
-              <button class="btn btn-clear" style="padding: 5px 8px;" onclick="removeTag(this)">
+              <button class="btn btn-clear remove-btn" style="padding: 5px 8px;">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -532,7 +532,7 @@
                 <div class="tag-name">思路讲解</div>
                 <div class="tag-sample">提取格式：<span>### 思路讲解：内容...</span></div>
               </div>
-              <button class="btn btn-clear" style="padding: 5px 8px;" onclick="removeTag(this)">
+              <button class="btn btn-clear remove-btn" style="padding: 5px 8px;">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -543,7 +543,7 @@
                 <div class="tag-name">规范答案</div>
                 <div class="tag-sample">提取格式：<span>### 规范答案：内容...</span></div>
               </div>
-              <button class="btn btn-clear" style="padding: 5px 8px;" onclick="removeTag(this)">
+              <button class="btn btn-clear remove-btn" style="padding: 5px 8px;">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -551,10 +551,10 @@
           
           <div class="tag-input-group" id="newTagGroup" style="display: none;">
             <input type="text" id="newTagInput" placeholder="输入新标签名称（例如：摘要）">
-            <button class="btn" onclick="addNewTag()">
+            <button class="btn" id="confirmAddBtn">
               <i class="fas fa-plus"></i> 添加
             </button>
-            <button class="btn btn-clear" onclick="cancelAddTag()">
+            <button class="btn btn-clear" id="cancelAddBtn">
               <i class="fas fa-times"></i> 取消
             </button>
           </div>
@@ -642,6 +642,7 @@
   </div>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // DOM元素引用
         const fileInput = document.getElementById('fileInput');
         const dropArea = document.getElementById('dropArea');
         const fileInfo = document.getElementById('fileInfo');
@@ -668,40 +669,67 @@
         const newTagGroup = document.getElementById('newTagGroup');
         const resetTagsBtn = document.getElementById('resetTagsBtn');
         const tagContainer = document.getElementById('tagContainer');
+        const confirmAddBtn = document.getElementById('confirmAddBtn');
+        const cancelAddBtn = document.getElementById('cancelAddBtn');
         
+        // 全局变量
         let workbook = null;
         let processedData = [];
         let processingTimer = null;
         let startTime = null;
         
-        // 点击上传区域触发文件选择
-        dropArea.addEventListener('click', function() {
-            fileInput.click();
-        });
-        
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                handleFile(this.files[0]);
-            }
-        });
-        
-        // 拖拽事件处理
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, preventDefaults, false);
-        });
+        // 文件上传相关事件绑定
+        function initEventListeners() {
+            // 点击上传区域触发文件选择
+            dropArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    handleFile(this.files[0]);
+                }
+            });
+            
+            // 拖拽事件处理
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            // 文件拖放处理
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            // 标签按钮事件
+            addTagBtn.addEventListener('click', function() {
+                newTagGroup.style.display = 'flex';
+                newTagInput.focus();
+            });
+            
+            confirmAddBtn.addEventListener('click', addNewTag);
+            cancelAddBtn.addEventListener('click', cancelAddTag);
+            resetTagsBtn.addEventListener('click', resetTags);
+            
+            // 删除标签事件委托
+            tagContainer.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-btn')) {
+                    const btn = e.target.closest('.remove-btn');
+                    const tagItem = btn.closest('.tag-item');
+                    if (tagItem) {
+                        tagItem.remove();
+                    }
+                }
+            });
+            
+            // 处理按钮
+            processBtn.addEventListener('click', processExcel);
+            downloadBtn.addEventListener('click', downloadResult);
+            clearBtn.addEventListener('click', clearAll);
+        }
         
         function preventDefaults(e) {
             e.preventDefault();
             e.stopPropagation();
         }
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropArea.addEventListener(eventName, highlight, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropArea.addEventListener(eventName, unhighlight, false);
-        });
         
         function highlight() {
             dropArea.style.borderColor = '#2ecc71';
@@ -710,11 +738,8 @@
         
         function unhighlight() {
             dropArea.style.borderColor = '#3498db';
-            dropArea.style.background = 'rgba(52, 152, 219, 0.1)';
+            dropArea.style.background = 'rgda(52, 152, 219, 0.1)';
         }
-        
-        // 文件拖放处理
-        dropArea.addEventListener('drop', handleDrop, false);
         
         function handleDrop(e) {
             const dt = e.dataTransfer;
@@ -789,11 +814,6 @@
         }
         
         // 标签管理功能
-        addTagBtn.addEventListener('click', function() {
-            newTagGroup.style.display = 'flex';
-            newTagInput.focus();
-        });
-        
         function addNewTag() {
             const tagName = newTagInput.value.trim();
             if (!tagName) {
@@ -823,7 +843,7 @@
                         <div class="tag-name">${tagName}</div>
                         <div class="tag-sample">提取格式：<span>### ${tagName}：内容...</span></div>
                     </div>
-                    <button class="btn btn-clear" style="padding: 5px 8px;" onclick="removeTag(this)">
+                    <button class="btn btn-clear remove-btn" style="padding: 5px 8px;">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -835,12 +855,12 @@
             showNotification(`已添加标签: ${tagName}`, "success");
         }
         
-        function removeTag(btn) {
-            const tagItem = btn.closest('.tag-item');
-            tagItem.remove();
+        function cancelAddTag() {
+            newTagInput.value = '';
+            newTagGroup.style.display = 'none';
         }
         
-        resetTagsBtn.addEventListener('click', function() {
+        function resetTags() {
             tagContainer.innerHTML = `
                 <div class="tag-item">
                     <i class="fas fa-tag"></i>
@@ -848,8 +868,8 @@
                         <div class="tag-name">是否可解答</div>
                         <div class="tag-sample">提取格式：<span>### 是否可解答：[true]</span></div>
                     </div>
-                    <button class="btn btn-clear" style="padding: 5px 8px;" onclick="removeTag(this)">
-                        <i class="fas fa-trash"></i>
+                    <button class="btn btn-clear remove-btn" style="padding: 5px 8px;">
+                        <i class="fas fa-trash"></极速赛车开奖网i>
                     </button>
                 </div>
                 
@@ -859,7 +879,7 @@
                         <div class="tag-name">思路讲解</div>
                         <div class="tag-sample">提取格式：<span>### 思路讲解：内容...</span></div>
                     </div>
-                    <button class="btn btn-clear" style="padding: 5px 8px;" onclick="removeTag(this)">
+                    <button class="btn btn-clear remove-btn" style="padding: 5px 8px;">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -870,17 +890,28 @@
                         <div class="tag-name">规范答案</div>
                         <div class="tag-sample">提取格式：<span>### 规范答案：内容...</span></div>
                     </div>
-                    <button class="btn btn-clear" style="padding: 5px 8px;" onclick="removeTag(this)">
+                    <button class="btn btn-clear remove-btn" style="padding: 5px 8px;">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
             `;
             showNotification("已重置为默认标签", "success");
-        });
+        }
         
-        function cancelAddTag() {
-            newTagInput.value = '';
+        function clearAll() {
+            fileInput.value = '';
+            fileInfo.style.display = 'none';
+            progressContainer.style.display = 'none';
+            resultContainer.style.display = 'none';
+            loadingSpinner.style.display = 'none';
+            processBtn.disabled = true;
+            downloadBtn.disabled = true;
+            workbook = null;
+            processedData = [];
+            resultStatus.style.display = 'none';
             newTagGroup.style.display = 'none';
+            
+            showNotification("已重置所有内容", "success");
         }
         
         // 显示通知
@@ -1164,8 +1195,8 @@
             }
         }
         
-        // 暴露函数给全局作用域
-        window.removeTag = removeTag;
+        // 初始化事件监听
+        initEventListeners();
     });
   </script>
 </body>

@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel文本处理工具（整合版）</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2c3e50);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+        
+        .panel:hover {
+            transform: translateY(-5px);
+        }
+        
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            border-radius: 6px 6px 0 0;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .panel-title {
+            font-size: 1.4rem;
+            color: #1a2a6c;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            background: #2980b9;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .btn-clear {
+            background: #e74c3c;
+        }
+        
+        .btn-clear:hover {
+            background: #c0392b;
+        }
+        
+        .btn-copy {
+            background: #2ecc71;
+        }
+        
+        .btn-copy:hover {
+            background: #27ae60;
+        }
+        
+        .btn-download {
+            background: #9b59b6;
+        }
+        
+        .btn-download:hover {
+            background: #8e44ad;
+        }
+        
+        .btn-upload {
+            background: #f39c12;
+        }
+        
+        .btn-upload:hover {
+            background: #d35400;
+        }
+        
+        textarea, .code-container {
+            width: 100%;
+            min-height: 450px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 15px;
+            resize: vertical;
+            background: #f9f9f9;
+            line-height: 1.6;
+        }
+        
+        .code-container {
+            overflow: auto;
+            position: relative;
+        }
+        
+        .code-view {
+            white-space: pre-wrap;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f8ff;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-info i {
+            color: #3498db;
+            font-size: 1.2rem;
+        }
+        
+        .file-info-content {
+            flex: 1;
+        }
+        
+        .file-info h4 {
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        
+        .file-info p {
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .preview-table th {
+            background-color: #1a2a6c;
+            color: white;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        
+        .preview-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .preview-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .preview-table tr:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 400px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        .file-input-container {
+            position: relative;
+            display: inline-block;
+            overflow: hidden;
+        }
+        
+        .file-input-container input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            margin-right: 5px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .tab:hover {
+            background: #3498db;
+            color: white;
+        }
+        
+        .tab.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: #555;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-success {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+        
+        .status-error {
+            background: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(52, 152, 219, 0.2);
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .panel {
+                min-height: 350px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Excel文本处理工具（整合版）</h1>
+            <p class="subtitle">提取规范答案和思路讲解并添加格式化标签</p>
+        </header>
+        
+        <div class="main-content">
+            <!-- 输入面板 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <i class="fas fa-file-import"></i>
+                        输入源
+                    </h2>
+                    <div>
+                        <button class="btn btn-clear" id="clearBtn">
+                            <i class="fas fa-trash"></i>
+                            清空
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="text">文本输入</div>
+                    <div class="tab" data-tab="excel">Excel上传</div>
+                </div>
+                
+                <div class="tab-content active" id="text-tab">
+                    <textarea id="inputText" placeholder="在此粘贴或输入文本内容...">### 规范答案：
+(1) 
+$$\begin{array}{r}
+
+### 思路讲解：
+(2) 
+① 个位：8×7=56，写6进5 
+② 十位：0×7=0，加进位5得5</textarea>
+                </div>
+                
+                <div class="tab-content" id="excel-tab">
+                    <div style="text-align: center; padding: 40px 20px; border: 2px dashed #3498db; border-radius: 8px; background: #f8fbff;">
+                        <i class="fas fa-file-excel" style="font-size: 3rem; color: #27ae60; margin-bottom: 15px;"></i>
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">上传Excel文件</h3>
+                        <p style="margin-bottom: 20px; color: #555;">请上传包含id和content列的Excel文件（.xlsx格式）</p>
+                        <div class="file-input-container">
+                            <button class="btn btn-upload">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                选择Excel文件
+                            </button>
+                            <input type="file" id="fileInput" accept=".xlsx, .xls">
+                        </div>
+                    </div>
+                    
+                    <div id="fileInfo" class="file-info" style="display: none;">
+                        <i class="fas fa-file-excel"></i>
+                        <div class="file-info-content">
+                            <h4 id="fileName">example.xlsx</h4>
+                            <p id="fileDetails">3行数据 | 2列</p>
+                        </div>
+                        <button class="btn btn-clear" id="removeFileBtn" style="padding: 6px 12px;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="previewContainer" style="display: none; margin-top: 20px;">
+                        <h4 style="margin-bottom: 10px; color: #2c3e50;">数据预览</h4>
+                        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;">
+                            <table class="preview-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Content</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="previewTableBody">
+                                    <!-- 预览数据将在这里显示 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="progressText">0%</span>
+                            <span id="processedRows">已处理 0 行</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 输出面板 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">
+                        <i class="fas fa-file-export"></i>
+                        处理结果
+                    </h2>
+                    <div>
+                        <button class="btn" id="processBtn">
+                            <i class="fas fa-cogs"></i>
+                            处理数据
+                        </button>
+                        <button class="btn btn-copy" id="copyBtn">
+                            <i class="fas fa-copy"></i>
+                            复制
+                        </button>
+                        <button class="btn btn-download" id="downloadBtn" disabled>
+                            <i class="fas fa-download"></i>
+                            下载Excel
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="code-container">
+                    <pre id="codeView" class="code-view">处理结果将在这里显示...</pre>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span id="processTime">处理时间: 0ms</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-file-code"></i>
+                        <span id="lineCount">处理行数: 0</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-plus-circle"></i>
+                        <span id="brAdded">添加 &lt;br&gt;: 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="notification" id="notification">
+            <i class="fas fa-check-circle"></i>
+            <span id="notificationText">结果已复制到剪贴板！</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 元素引用
+            const inputText = document.getElementById('inputText');
+            const processBtn = document.getElementById('processBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const codeView = document.getElementById('codeView');
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notificationText');
+            const processTimeEl = document.getElementById('processTime');
+            const lineCountEl = document.getElementById('lineCount');
+            const brAddedEl = document.getElementById('brAdded');
+            const fileInput = document.getElementById('fileInput');
+            const fileInfo = document.getElementById('fileInfo');
+            const fileName = document.getElementById('fileName');
+            const fileDetails = document.getElementById('fileDetails');
+            const removeFileBtn = document.getElementById('removeFileBtn');
+            const previewContainer = document.getElementById('previewContainer');
+            const previewTableBody = document.getElementById('previewTableBody');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const processedRows = document.getElementById('processedRows');
+            
+            // Tab切换
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 移除所有active类
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // 添加active类到当前tab
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab') + '-tab';
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // 隐藏进度条（非Excel模式）
+                    if (tab.getAttribute('data-tab') !== 'excel') {
+                        progressContainer.style.display = 'none';
+                    }
+                });
+            });
+            
+            // 状态变量
+            let uploadedData = null;
+            let processedExcelData = null;
+            let processingTimer = null;
+            let startTime = null;
+            let processedContentForCopy = ""; // 用于存储要复制的内容
+            
+            // 清空按钮
+            clearBtn.addEventListener('click', function() {
+                inputText.value = '';
+                codeView.textContent = '处理结果将在这里显示...';
+                processedContentForCopy = "";
+                updateStats(0, 0, 0);
+                resetExcelData();
+                
+                // 隐藏Excel进度条
+                progressContainer.style.display = 'none';
+            });
+            
+            // 处理按钮
+            processBtn.addEventListener('click', processData);
+            
+            // 复制按钮 (已修复)
+            copyBtn.addEventListener('click', function() {
+                if (!processedContentForCopy || processedContentForCopy === '处理结果将在这里显示...') {
+                    showNotification("没有内容可复制！", "error");
+                    return;
+                }
+                
+                // 使用现代API复制文本
+                navigator.clipboard.writeText(processedContentForCopy)
+                    .then(() => {
+                        showNotification("结果已复制到剪贴板！", "success");
+                    })
+                    .catch(err => {
+                        console.error('复制失败: ', err);
+                        showNotification("复制失败，请重试！", "error");
+                    });
+            });
+            
+            // 下载按钮
+            downloadBtn.addEventListener('click', downloadExcel);
+            
+            // 移除文件按钮
+            removeFileBtn.addEventListener('click', resetExcelData);
+            
+            // 文件上传处理
+            fileInput.addEventListener('change', handleFileUpload);
+            
+            // 初始处理示例文本
+            processText(inputText.value);
+            
+            // 判断是否为HTML/CSS行
+            function isHtmlLine(line) {
+                const stripped = line.trim();
+                
+                if (!stripped) return false;
+                
+                // HTML模式
+                const htmlPatterns = [
+                    /^\s*<[a-z!][^>]*>/,      // HTML标签开头
+                    /^\s*<\/[a-z]+>/,          // HTML闭合标签
+                    /^\s*<!--/,                // HTML注释开头
+                    /-->\s*$/,                 // HTML注释结尾
+                    /^\s*<!DOCTYPE/            // DOCTYPE声明
+                ];
+                
+                // CSS模式
+                const cssPatterns = [
+                    /^\s*[.#@][^{]*\{/,        // CSS选择器
+                    /^\s*[a-z-]+\s*:/,         // CSS属性
+                    /^\s*}\s*$/,               // CSS规则结束
+                    /^\s*@media/,              // CSS媒体查询
+                    /^\s*@keyframes/           // CSS动画
+                ];
+                
+                // 检查是否匹配任何HTML或CSS模式
+                const allPatterns = [...htmlPatterns, ...cssPatterns];
+                return allPatterns.some(pattern => pattern.test(stripped));
+            }
+            
+            // 处理内容
+            function processContent(content) {
+                if (!content) return { processedText: '', brCount: 0 };
+                
+                const lines = content.split('\n');
+                let inHtmlBlock = false;
+                const processedLines = [];
+                let brCount = 0;
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    
+                    // 检测<style>标签
+                    if (/<style[^>]*>/i.test(line)) {
+                        inHtmlBlock = true;
+                    }
+                    if (/<\/style>/i.test(line)) {
+                        inHtmlBlock = false;
+                    }
+                    
+                    if (inHtmlBlock || isHtmlLine(line)) {
+                        // HTML/CSS内容，保持原样
+                        processedLines.push(line);
+                    } else if (line.trim()) {
+                        // 非HTML行且非空行，添加<br>标签
+                        processedLines.push(`<br>${line}`);
+                        brCount++;
+                    } else {
+                        // 空行保持不变
+                        processedLines.push(line);
+                    }
+                }
+                
+                return {
+                    processedText: processedLines.join('\n'),
+                    brCount: brCount
+                };
+            }
+            
+            // 提取字段
+            function extractFields(content) {
+                let answer = '';
+                let explanation = '';
+
+                if (!content) {
+                    return { answer, explanation };
+                }
+
+                const contentStr = String(content);
+
+                try {
+                    // 提取规范
+                    const stdAnswerPattern = /###\s*规范[：:]\s*([\s\S]*?)(?=\s*###|$)/i;
+                    const stdAnswerMatch = contentStr.match(stdAnswerPattern);
+                    if (stdAnswerMatch) {
+                        answer = stdAnswerMatch[1].trim();
+                    }
+
+                    // 提取思路讲解
+                    const stepsPattern = /###\s*思路讲解[：:]\s*([\s\S]*?)(?=\s*###|$)/i;
+                    const stepsMatch = contentStr.match(stepsPattern);
+                    if (stepsMatch) {
+                        explanation = stepsMatch[1].trim();
+                    }
+
+                } catch (e) {
+                    console.error("提取字段时出错:", e);
+                }
+                return { answer, explanation };
+            }
+            
+            // 转换内容为要求格式
+            function transformContent(content) {
+                const { answer, explanation } = extractFields(content);
+                
+                // 拼接答案和解析
+                let answerPart = "【答案】：\n" + answer;
+                let explanationPart = "【解析】：\n" + explanation;
+                
+                let combined = answerPart + "\n\n" + explanationPart;
+                
+                // 添加<br>标签
+                const processed = processContent(combined);
+                
+                return processed;
+            }
+            
+            // 处理文本
+            function processText(content) {
+                const startTime = performance.now();
+                const result = transformContent(content);
+                const endTime = performance.now();
+                const processTime = endTime - startTime;
+                
+                codeView.textContent = result.processedText;
+                processedContentForCopy = result.processedText; // 存储用于复制的内容
+                updateStats(processTime, content.split('\n').length, result.brCount);
+            }
+            
+            // 处理Excel数据
+            function processExcelData() {
+                if (!uploadedData || uploadedData.length === 0) {
+                    showNotification("没有Excel数据可供处理！", "error");
+                    return;
+                }
+                
+                const startTime = performance.now();
+                let totalBrCount = 0;
+                
+                // 开始处理
+                progressContainer.style.display = 'block';
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                
+                // 显示进度
+                const totalRows = uploadedData.length;
+                processedRows.textContent = `已处理 0 / ${totalRows} 行`;
+                
+                // 使用setTimeout分块处理以避免UI阻塞
+                function processChunk(startIndex, chunkSize) {
+                    const endIndex = Math.min(startIndex + chunkSize, totalRows);
+                    
+                    for (let i = startIndex; i < endIndex; i++) {
+                        const row = uploadedData[i];
+                        const result = transformContent(row.content);
+                        totalBrCount += result.brCount;
+                        
+                        processedExcelData.push({
+                            id: row.id,
+                            content: row.content,
+                            processedContent: result.processedText,
+                            brCount: result.brCount
+                        });
+                        
+                        // 更新进度
+                        const processedCount = i + 1;
+                        const percentage = Math.floor((processedCount / totalRows) * 100);
+                        processedRows.textContent = `已处理 ${processedCount} / ${totalRows} 行`;
+                        progressText.textContent = `${percentage}%`;
+                        progressFill.style.width = `${percentage}%`;
+                    }
+                    
+                    // 如果还有数据需要处理，继续处理下一个块
+                    if (endIndex < totalRows) {
+                        setTimeout(() => processChunk(endIndex, chunkSize), 1);
+                    } else {
+                        // 处理完成
+                        clearInterval(processingTimer);
+                        
+                        // 更新到100%
+                        progressText.textContent = '100%';
+                        progressFill.style.width = '100%';
+                        
+                        // 计算处理时间
+                        const endTime = performance.now();
+                        const processTime = endTime - startTime;
+                        
+                        // 显示处理后的内容（第一条记录）
+                        if (processedExcelData.length > 0) {
+                            codeView.textContent = processedExcelData[0].processedContent;
+                            processedContentForCopy = processedExcelData[0].processedContent;
+                        }
+                        updateStats(processTime, totalRows, totalBrCount);
+                        
+                        // 启用下载按钮
+                        downloadBtn.disabled = false;
+                        
+                        showNotification(`处理完成！共处理 ${totalRows} 行数据`, "success");
+                    }
+                }
+                
+                // 初始化处理结果
+                processedExcelData = [];
+                
+                // 开始分块处理（每块50行）
+                processChunk(0, 50);
+            }
+            
+            // 处理数据（根据当前模式）
+            function processData() {
+                if (document.querySelector('.tab[data-tab="excel"]').classList.contains('active')) {
+                    processExcelData();
+                } else {
+                    processText(inputText.value);
+                }
+            }
+            
+            // 下载Excel文件
+            function downloadExcel() {
+                if (!processedExcelData || processedExcelData.length === 0) {
+                    showNotification("没有处理后的数据可供下载！", "error");
+                    return;
+                }
+                
+                try {
+                    // 创建工作表
+                    const ws = XLSX.utils.json_to_sheet(processedExcelData);
+                    
+                    // 创建工作簿
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "处理结果");
+                    
+                    // 生成Excel文件并下载
+                    XLSX.writeFile(wb, '文本处理结果.xlsx');
+                    
+                    showNotification("Excel文件下载成功！", "success");
+                } catch (error) {
+                    console.error('下载失败: ', error);
+                    showNotification("Excel文件生成失败！", "error");
+                }
+            }
+            
+            // 处理文件上传
+            function handleFileUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // 获取第一个工作表
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // 转换为JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        // 验证数据格式
+                        if (jsonData.length === 0 || !('id' in jsonData[0]) || !('content' in jsonData[0])) {
+                            showNotification("Excel文件必须包含id和content列！", "error");
+                            return;
+                        }
+                        
+                        // 存储上传的数据
+                        uploadedData = jsonData;
+                        
+                        // 显示文件信息
+                        fileName.textContent = file.name;
+                        fileDetails.textContent = `${jsonData.length}行数据 | ${Object.keys(jsonData[0]).length}列`;
+                        fileInfo.style.display = 'flex';
+                        
+                        // 显示数据预览
+                        displayPreview(jsonData.slice(0, 5));
+                        previewContainer.style.display = 'block';
+                        
+                        // 隐藏进度条
+                        progressContainer.style.display = 'none';
+                        
+                        // 禁用下载按钮直到处理完成
+                        downloadBtn.disabled = true;
+                        
+                        showNotification("Excel文件上传成功！", "success");
+                    } catch (error) {
+                        console.error('文件处理错误: ', error);
+                        showNotification("Excel文件解析失败！", "error");
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            
+            // 显示数据预览
+            function displayPreview(data) {
+                previewTableBody.innerHTML = '';
+                
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    
+                    const idCell = document.createElement('td');
+                    idCell.textContent = row.id;
+                    tr.appendChild(idCell);
+                    
+                    const contentCell = document.createElement('td');
+                    contentCell.textContent = row.content.length > 100 ? 
+                        row.content.substring(0, 100) + '...' : row.content;
+                    tr.appendChild(contentCell);
+                    
+                    previewTableBody.appendChild(tr);
+                });
+            }
+            
+            // 重置Excel数据
+            function resetExcelData() {
+                uploadedData = null;
+                processedExcelData = null;
+                fileInput.value = '';
+                fileInfo.style.display = 'none';
+                previewContainer.style.display = 'none';
+                downloadBtn.disabled = true;
+                
+                // 清除输出
+                if (document.querySelector('.tab[data-tab="excel"]').classList.contains('active')) {
+                    codeView.textContent = '处理结果将在这里显示...';
+                    processedContentForCopy = "";
+                    updateStats(0, 0, 0);
+                    progressContainer.style.display = 'none';
+                }
+            }
+            
+            // 显示通知
+            function showNotification(message, type) {
+                notificationText.textContent = message;
+                notification.style.background = type === "success" ? "#2ecc71" : "#e74c3c";
+                notification.querySelector('i').className = type === "success" ? "fas fa-check-circle" : "fas fa-exclamation-circle";
+                
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // 更新统计信息
+            function updateStats(time, lines, brCount) {
+                processTimeEl.textContent = `处理时间: ${time.toFixed(2)}ms`;
+                lineCountEl.textContent = `处理行数: ${lines}`;
+                brAddedEl.textContent = `添加 <br>: ${brCount}`;
+            }
+            
+            // 监听文本输入变化
+            inputText.addEventListener('input', function() {
+                if (document.querySelector('.tab[data-tab="text"]').classList.contains('active')) {
+                    processText(this.value);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

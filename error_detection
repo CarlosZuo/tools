@@ -217,13 +217,14 @@
   <div class="container">
     <header>
       <h1>错题检测结构提取</h1>
+      <p class="subtitle">修改日期：0703</p>
     </header>
     
     <div class="main-content">
       <!-- 输入源面板 -->
       <div class="panel">
         <div class="panel-header">
-          <h2 class="panel-title">输入</h2>
+          <h2 class="panel-title">输入源</h2>
         </div>
         
         <div class="btn-group">

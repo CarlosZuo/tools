@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>错题检测结果处理工具</title>
+  <title>错题检测结果提取工具</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * {
@@ -174,27 +174,17 @@
       gap: 5px;
     }
     
-    .diff-level {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-size: 0.8rem;
-      margin-left: 5px;
+    .result-display {
+      margin-top: 15px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
     }
     
-    .diff-green {
-      background-color: #2ecc71;
-      color: white;
-    }
-    
-    .diff-yellow {
-      background-color: #f1c40f;
-      color: #333;
-    }
-    
-    .diff-red {
-      background-color: #e74c3c;
-      color: white;
+    .result-line {
+      padding: 5px 0;
+      font-size: 1rem;
     }
     
     @media (max-width: 768px) {
@@ -210,14 +200,19 @@
         padding: 8px 12px;
         font-size: 0.85rem;
       }
+      
+      .stats {
+        flex-direction: column;
+        gap: 10px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>错题检测结构提取</h1>
-      <p class="subtitle">修改日期：0703</p>
+      <h1>错题检测结果提取工具</h1>
+      <p class="subtitle">提取原答案正确性和一致性分析结果0703</p>
     </header>
     
     <div class="main-content">
@@ -237,33 +232,30 @@
           <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
         </div>
         
-<textarea class="text-area" id="inputText" placeholder="请在此输入或粘贴需要处理的文本...">
-Content结构如下：
-## 阶段1答案：
-[阶段1答案内容]
+        <textarea class="text-area" id="inputText" placeholder="请在此输入或粘贴需要处理的文本...">## 阶段1答案：
+12的平方是144
 
 ## 原答案正确性裁定：
-- 原答案正确性: [正确/错误]
+- 原答案正确性: 正确
 
-## “阶段1答案”和“原答案”比对结果：
-- 一致性：[一致/不一致]
-- 差异等级：[🟢(无实质差异)/🟡(表述差异)/🔴(根本矛盾)]
+## "阶段1答案"和"原答案"比对结果：
+- 一致性：一致
+- 差异等级：🟢(无实质差异)
 
 ## 验证证据链：
-- 关键矛盾: [例如：符号方向冲突]
-- 支持证据: [例如：平方比较12<18]
-</textarea>
+- 关键矛盾: 无
+- 支持证据: 12²=144</textarea>
       </div>
       
       <!-- 处理结果面板 -->
       <div class="panel">
         <div class="panel-header">
-          <h2 class="panel-title">处理结果</h2>
+          <h2 class="panel-title">提取结果</h2>
         </div>
         
         <div class="btn-group">
           <button class="btn btn-process" id="processBtn">
-            <i class="fas fa-cogs"></i> 数据提取
+            <i class="fas fa-cogs"></i> 分析比对
           </button>
           <button class="btn btn-copy" id="copyBtn" disabled>
             <i class="fas fa-copy"></i> 复制
@@ -273,7 +265,14 @@ Content结构如下：
           </button>
         </div>
         
-        <textarea class="text-area" id="outputText" placeholder="分析结果将显示在这里..." readonly></textarea>
+        <div class="result-display">
+          <div class="result-line" id="originalAnswerResult">
+            <strong>原答案正确性列:</strong> <span id="originalAnswerValue">未提取</span>
+          </div>
+          <div class="result-line" id="consistencyResult">
+            <strong>一致性列:</strong> <span id="consistencyValue">未提取</span>
+          </div>
+        </div>
         
         <div class="stats">
           <div class="stat-item">
@@ -281,11 +280,8 @@ Content结构如下：
             <span id="processTime">耗时: 0ms</span>
           </div>
           <div class="stat-item">
-            <i class="fas fa-list-ol"></i>
-            <span id="lineCount">行数: 0</span>
-          </div>
-          <div class="stat-item">
-            <span id="consistency">一致性: -</span>
+            <i class="fas fa-check-circle"></i>
+            <span id="extractCount">提取字段: 0/2</span>
           </div>
         </div>
       </div>
@@ -295,7 +291,6 @@ Content结构如下：
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const inputText = document.getElementById('inputText');
-      const outputText = document.getElementById('outputText');
       const clearBtn = document.getElementById('clearBtn');
       const excelUploadBtn = document.getElementById('excelUploadBtn');
       const fileInput = document.getElementById('fileInput');
@@ -303,18 +298,19 @@ Content结构如下：
       const copyBtn = document.getElementById('copyBtn');
       const downloadBtn = document.getElementById('downloadBtn');
       const processTime = document.getElementById('processTime');
-      const lineCount = document.getElementById('lineCount');
-      const consistency = document.getElementById('consistency');
+      const extractCount = document.getElementById('extractCount');
+      const originalAnswerValue = document.getElementById('originalAnswerValue');
+      const consistencyValue = document.getElementById('consistencyValue');
       
       // 清空输入
       clearBtn.addEventListener('click', function() {
         inputText.value = '';
-        outputText.value = '';
+        originalAnswerValue.textContent = '未提取';
+        consistencyValue.textContent = '未提取';
         copyBtn.disabled = true;
         downloadBtn.disabled = true;
         processTime.textContent = '耗时: 0ms';
-        lineCount.textContent = '行数: 0';
-        consistency.textContent = '一致性: -';
+        extractCount.textContent = '提取字段: 0/2';
       });
       
       // Excel上传
@@ -363,82 +359,94 @@ Content结构如下：
         
         const startTime = performance.now();
         
-        // 分析比对逻辑
-        let analysisResult = analyzeComparison(inputText.value);
+        // 提取原答案正确性和一致性
+        const originalAnswer = extractOriginalAnswer(inputText.value);
+        const consistency = extractConsistency(inputText.value);
         
         const endTime = performance.now();
         const timeSpent = (endTime - startTime).toFixed(2);
         
-        outputText.value = analysisResult.formattedText;
+        // 显示结果
+        originalAnswerValue.textContent = originalAnswer || '未提取';
+        consistencyValue.textContent = consistency || '未提取';
+        
+        // 计算成功提取的字段数
+        const extractedCount = (originalAnswer ? 1 : 0) + (consistency ? 1 : 0);
+        extractCount.textContent = `提取字段: ${extractedCount}/2`;
+        
+        // 启用功能按钮
         copyBtn.disabled = false;
         downloadBtn.disabled = false;
         
         // 更新统计信息
         processTime.textContent = `耗时: ${timeSpent}ms`;
-        lineCount.textContent = `行数: ${analysisResult.lineCount}`;
-        consistency.textContent = `一致性: ${analysisResult.consistency}`;
       });
       
       // 复制结果
       copyBtn.addEventListener('click', function() {
-        outputText.select();
+        const result = `原答案正确性列: ${originalAnswerValue.textContent}\n一致性列: ${consistencyValue.textContent}`;
+        
+        const textArea = document.createElement('textarea');
+        textArea.value = result;
+        document.body.appendChild(textArea);
+        textArea.select();
         document.execCommand('copy');
-        alert('已复制到剪贴板');
+        document.body.removeChild(textArea);
+        
+        alert('结果已复制到剪贴板');
       });
       
       // 下载结果
       downloadBtn.addEventListener('click', function() {
-        if (!outputText.value.trim()) {
-          alert('没有可下载的内容');
-          return;
-        }
+        const result = `原答案正确性列: ${originalAnswerValue.textContent}\n一致性列: ${consistencyValue.textContent}`;
         
-        const blob = new Blob([outputText.value], {type: 'text/plain'});
+        const blob = new Blob([result], {type: 'text/plain'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = '比对分析结果.txt';
+        a.download = '提取结果.txt';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       });
       
-      // 分析比对函数
-      function analyzeComparison(text) {
-        // 提取阶段1答案
-        const stage1Match = text.match(/## 阶段1答案：([\s\S]*?)(?=##|$)/i);
-        const stage1Answer = stage1Match ? stage1Match[1].trim() : '';
+      // 提取原答案正确性 - 保持与Python脚本相同的逻辑
+      function extractOriginalAnswer(content) {
+        if (!content) return "";
+        const contentStr = String(content);
         
-        // 提取原答案正确性
-        const correctnessMatch = text.match(/原答案正确性:\s*(\S+)/i);
-        const correctness = correctnessMatch ? correctnessMatch[1] : '';
+        // 匹配最终的裁定标题区块
+        const match = contentStr.match(/##\s*原答案正确性裁定\s*[:：]?\s*\n([\s\S]*?)(?=\n##|\n|$)/i);
+        if (!match) return "";
         
-        // 提取一致性
-        const consistencyMatch = text.match(/一致性:\s*(\S+)/i);
-        const consistencyResult = consistencyMatch ? consistencyMatch[1] : '';
+        const block = match[0];
         
-        // 提取差异等级
-        const diffLevelMatch = text.match(/差异等级:\s*([🟢🟡🔴]\([^)]+\))/i);
-        const diffLevel = diffLevelMatch ? diffLevelMatch[1] : '';
+        // 在原区块中匹配原答案正确性行
+        const originalMatch = block.match(/原答案正确性\s*[:：]\s*(\S+)/i);
+        return originalMatch ? originalMatch[1].trim() : "";
+      }
+      
+      // 提取一致性信息 - 保持与Python脚本相同的逻辑
+      function extractConsistency(content) {
+        if (!content) return "";
+        const contentStr = String(content);
         
-        // 提取验证证据链
-        const evidenceMatch = text.match(/## 验证证据链：([\s\S]*?)(?=##|$)/i);
-        const evidence = evidenceMatch ? evidenceMatch[1].trim() : '';
+        // 尝试匹配带引号的比对结果标题
+        let match = contentStr.match(/##\s*["“](阶段1答案)["”]\s*和\s*["“](原答案)["”]\s*比对结果\s*[:：]?\s*\n([\s\S]*?)(?=\n##|\n|$)/i);
         
-        // 格式化输出
-        let formattedText = `## 分析报告\n\n`;
-        formattedText += `### 阶段1答案分析\n${stage1Answer}\n\n`;
-        formattedText += `### 原答案正确性\n- 判定结果: ${correctness}\n\n`;
-        formattedText += `### 一致性分析\n- 一致性: ${consistencyResult}\n`;
-        formattedText += `- 差异等级: ${diffLevel}\n\n`;
-        formattedText += `### 验证证据链\n${evidence}`;
+        // 如果没有匹配到，尝试简单格式的比对结果
+        if (!match) {
+          match = contentStr.match(/##\s*比对结果\s*[:：]?\s*\n([\s\S]*?)(?=\n##|\n|$)/i);
+        }
         
-        return {
-          formattedText: formattedText,
-          lineCount: formattedText.split('\n').length,
-          consistency: consistencyResult
-        };
+        if (!match) return "";
+        
+        const block = match[0];
+        
+        // 在比对结果区块中匹配一致性信息
+        const consistencyMatch = block.match(/一致性\s*[:：]\s*([^ \n]+)/i);
+        return consistencyMatch ? consistencyMatch[1].trim() : "";
       }
     });
   </script>

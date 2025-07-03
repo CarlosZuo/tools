@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel文本处理工具</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0d1126, #1a2866);
+            color: #e6f1ff;
+            min-height: 100vh;
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+        }
+        
+        .title {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 15px 0 5px;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #9ac8ff;
+            max-width: 800px;
+            margin: 10px auto;
+            line-height: 1.6;
+        }
+        
+        .tool-section {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .panel {
+            flex: 1;
+            background: rgba(16, 26, 60, 0.8);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 10, 30, 0.5);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+        }
+        
+        .panel-title {
+            font-size: 22px;
+            margin-bottom: 25px;
+            color: #4facfe;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(100, 150, 255, 0.3);
+        }
+        
+        .btn-clear {
+            background: transparent;
+            border: 1px solid #ff5d6c;
+            color: #ff5d6c;
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-clear:hover {
+            background: rgba(255, 93, 108, 0.15);
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 15px;
+            color: #9ac8ff;
+            font-size: 16px;
+        }
+        
+        .text-input {
+            width: 100%;
+            height: 180px;
+            background: rgba(10, 20, 40, 0.7);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            color: #e6f1ff;
+            font-size: 15px;
+            line-height: 1.6;
+            resize: vertical;
+            font-family: Consolas, monospace;
+        }
+        
+        .result-text {
+            width: 100%;
+            height: 300px;
+            background: rgba(10, 20, 40, 0.7);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            border-radius: 10px;
+            padding: 25px;
+            color: #e6f1ff;
+            font-size: 15px;
+            line-height: 1.7;
+            overflow: auto;
+            white-space: pre-wrap;
+            font-family: Consolas, monospace;
+        }
+        
+        .file-upload {
+            width: 100%;
+            margin-bottom: 25px;
+            background: rgba(10, 20, 40, 0.7);
+            border: 2px dashed rgba(100, 150, 255, 0.4);
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-upload:hover {
+            background: rgba(20, 40, 70, 0.7);
+            border-color: rgba(100, 150, 255, 0.7);
+        }
+        
+        .file-icon {
+            font-size: 48px;
+            color: #4facfe;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #9ac8ff;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        
+        .btn-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #4285f4, #4a8ef9);
+        }
+        
+        .btn-success {
+            background: linear-gradient(to right, #0a9b4b, #1bc75d);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(to right, #5a5a78, #6c6c8f);
+        }
+        
+        .stats-bar {
+            display: flex;
+            margin-top: 25px;
+            gap: 15px;
+        }
+        
+        .stat-item {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #9ac8ff;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4facfe;
+        }
+        
+        .btn-svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .success {
+            color: #1ee500;
+        }
+        
+        .error {
+            color: #ff5d6c;
+        }
+        
+        .result-header {
+            font-size: 18px;
+            color: #4facfe;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .operation-title {
+            font-size: 20px;
+            margin: 20px 0 10px;
+            color: #4facfe;
+        }
+        
+        .math-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .result-container {
+            background: rgba(16, 26, 60, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 900px) {
+            .tool-section {
+                flex-direction: column;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="title">Excel文本处理工具</h1>
+        <div class="subtitle">提取规范答案和思路讲解并添加格式化标签</div>
+    </div>
+    
+    <div class="tool-section">
+        <!-- 左侧输入面板 -->
+        <div class="panel">
+            <div class="panel-title">
+                <span>输入源</span>
+                <button class="btn-clear" id="btnClear">清空内容</button>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">规范答案:</label>
+                <textarea id="singleTextInput" class="text-input">
+(1)
+
+$$ \begin{array}{r}
+\phantom{0} 5\ 8\ 6 \\
+-\phantom{0} 1\ 9\ 7 \\
+\hline
+\phantom{0} 3\ 8\ 9 \\
+\end{array} $$
+
+验算:
+
+$$ \begin{array}{r}
+\phantom{0} 3\ 8\ 9 \\
++\phantom{0} 1\ 9\ 7 \\
+\hline
+\phantom{0} 5\ 8\ 6 \\
+\end{array} $$</textarea>
+            </div>
+            
+            <div class="input-group">
+                <label class="input-label">批量数据上传:</label>
+                <div class="file-upload" id="dropZone">
+                    <div class="file-icon">📁</div>
+                    <div class="upload-text">点击或拖拽Excel文件到此处</div>
+                    <div class="upload-text" style="font-size: 14px;">(支持 .xlsx 和 .xls 格式)</div>
+                    <input type="file" id="fileUpload" accept=".xlsx,.xls" style="display: none;">
+                    <div id="fileName" style="margin-top: 15px; color: #8fc1ff; font-weight: bold;"></div>
+                </div>
+            </div>
+            
+            <div class="operation-title">操作按钮</div>
+            <div class="btn-actions">
+                <button class="btn btn-success" id="btnProcessText">
+                    处理文本
+                </button>
+                <button class="btn btn-primary" id="btnProcessExcel">
+                    处理Excel
+                </button>
+            </div>
+        </div>
+        
+        <!-- 右侧结果面板 -->
+        <div class="panel">
+            <div class="panel-title">处理结果</div>
+            
+            <div class="result-text" id="resultText">
+请点击左侧的"处理文本"按钮查看示例结果
+            </div>
+            
+            <div class="operation-title">操作面板</div>
+            <div class="btn-actions">
+                <button class="btn btn-primary" id="btnProcessData">
+                    处理数据
+                </button>
+                <button class="btn btn-success" id="btnCopy">
+                    复制结果
+                </button>
+                <button class="btn btn-secondary" id="btnDownload">
+                    下载
+                </button>
+            </div>
+            
+            <div class="operation-title">处理统计</div>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-label">总耗时</div>
+                    <div class="stat-value" id="processingTime">0.00ms</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">处理行数</div>
+                    <div class="stat-value" id="rowsProcessed">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">有效数据</div>
+                    <div class="stat-value success" id="validData">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">异常数据</div>
+                    <div class="stat-value error" id="errorData">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM元素引用
+        const textInput = document.getElementById('singleTextInput');
+        const fileInput = document.getElementById('fileUpload');
+        const dropZone = document.getElementById('dropZone');
+        const fileName = document.getElementById('fileName');
+        const resultText = document.getElementById('resultText');
+        
+        // 按钮引用
+        const btnClear = document.getElementById('btnClear');
+        const btnProcessText = document.getElementById('btnProcessText');
+        const btnProcessExcel = document.getElementById('btnProcessExcel');
+        const btnCopy = document.getElementById('btnCopy');
+        const btnDownload = document.getElementById('btnDownload');
+        const btnProcessData = document.getElementById('btnProcessData');
+        
+        // 统计元素
+        const processingTime = document.getElementById('processingTime');
+        const rowsProcessed = document.getElementById('rowsProcessed');
+        const validData = document.getElementById('validData');
+        const errorData = document.getElementById('errorData');
+        
+        // 错误日志限制
+        const MAX_ERROR_LOG = 10;
+        const ERROR_FLAG = "异常";
+        const SUCCESS_CODE = "$$";
+        
+        // 存储处理结果
+        let processedResults = {
+            text: "",
+            excelData: null,
+            errorLog: [],
+            stats: {
+                startTime: 0,
+                elapsedTime: 0,
+                rowCount: 0,
+                validCount: 0,
+                errorCount: 0
+            }
+        };
+        
+        // 初始化
+        function init() {
+            // 清空按钮事件
+            btnClear.addEventListener('click', () => {
+                try {
+                    textInput.value = "";
+                    fileName.textContent = "";
+                    processedResults = {
+                        text: "",
+                        excelData: null,
+                        errorLog: [],
+                        stats: {
+                            startTime: 0,
+                            elapsedTime: 0,
+                            rowCount: 0,
+                            validCount: 0,
+                            errorCount: 0
+                        }
+                    };
+                    
+                    updateStatistics();
+                    resultText.textContent = "内容已清空";
+                    
+                    // 重置文件上传
+                    if (fileInput) {
+                        fileInput.value = '';
+                    }
+                } catch (err) {
+                    console.error("清空操作出错:", err);
+                    resultText.textContent = "清空操作出错: " + err.message;
+                }
+            });
+            
+            // 文本处理按钮事件
+            btnProcessText.addEventListener('click', () => {
+                try {
+                    const content = textInput.value.trim();
+                    if (!content) {
+                        alert("请输入要处理的文本内容");
+                        return;
+                    }
+                    
+                    processText(content);
+                } catch (err) {
+                    console.error("文本处理出错:", err);
+                    resultText.textContent = "文本处理出错: " + err.message;
+                }
+            });
+            
+            // Excel处理按钮事件
+            btnProcessExcel.addEventListener('click', () => {
+                try {
+                    if (fileInput.files.length === 0) {
+                        alert("请先上传Excel文件");
+                        return;
+                    }
+                    
+                    processExcel(fileInput.files[0]);
+                } catch (err) {
+                    console.error("Excel处理出错:", err);
+                    resultText.textContent = "Excel处理出错: " + err.message;
+                }
+            });
+            
+            // 复制按钮事件
+            btnCopy.addEventListener('click', () => {
+                try {
+                    if (processedResults.text) {
+                        navigator.clipboard.writeText(processedResults.text).then(() => {
+                            btnCopy.textContent = "已复制!";
+                            setTimeout(() => {
+                                btnCopy.textContent = '复制结果';
+                            }, 2000);
+                        }).catch(err => {
+                            console.error('复制失败:', err);
+                            alert("复制失败，请手动复制");
+                        });
+                    } else {
+                        alert("没有可以复制的内容");
+                    }
+                } catch (err) {
+                    console.error("复制操作出错:", err);
+                    alert("复制操作出错: " + err.message);
+                }
+            });
+            
+            // 下载按钮事件
+            btnDownload.addEventListener('click', () => {
+                try {
+                    if (processedResults.excelData) {
+                        downloadExcel();
+                    } else {
+                        alert("没有可下载的数据");
+                    }
+                } catch (err) {
+                    console.error("下载操作出错:", err);
+                    resultText.textContent = "下载操作出错: " + err.message;
+                }
+            });
+            
+            // 处理数据按钮事件
+            btnProcessData.addEventListener('click', () => {
+                try {
+                    if (processedResults.excelData) {
+                        processExcelData();
+                    } else {
+                        alert("没有Excel数据需要处理");
+                    }
+                } catch (err) {
+                    console.error("数据处理出错:", err);
+                    resultText.textContent = "数据处理出错: " + err.message;
+                }
+            });
+            
+            // 文件拖拽功能
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.background = "rgba(20, 40, 70, 0.7)";
+                dropZone.style.borderColor = "rgba(100, 150, 255, 0.7)";
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.background = "rgba(10, 20, 40, 0.7)";
+                dropZone.style.borderColor = "rgba(100, 150, 255, 0.4)";
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.background = "rgba(10, 20, 40, 0.7)";
+                dropZone.style.borderColor = "rgba(100, 150, 255, 0.4)";
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                   

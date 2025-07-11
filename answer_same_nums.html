@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>比对结果：一致答案数提取</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --error-color: #e74c3c;
+            --bg-light: #f8f9fa;
+            --text-primary: #343a40;
+            --border-color: #dee2e6;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-light);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #2980b9);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .app-version {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 110px);
+        }
+        
+        .input-panel {
+            width: 35%;
+            background-color: #f0f7ff;
+            padding: 25px;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .output-panel {
+            width: 65%;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-title {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .panel-title i {
+            font-size: 1.2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            border-bottom: 3px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background-color: white;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .upload-area i {
+            font-size: 48px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .status-bar {
+            background-color: #eef7ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+        }
+        
+        .status-bar.success {
+            background-color: #e8f8f0;
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .status-bar.error {
+            background-color: #fdeded;
+            color: var(--error-color);
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .status-bar.warning {
+            background-color: #fef5e7;
+            color: var(--warning-color);
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .results-container {
+            flex: 1;
+            overflow: auto;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .results-table th {
+            background-color: #f0f7ff;
+            text-align: left;
+            padding: 12px 15px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        .results-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .results-table tr:nth-child(even) {
+            background-color: rgba(240, 247, 255, 0.3);
+        }
+        
+        .results-table tr:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .error-row {
+            background-color: rgba(231, 76, 60, 0.1) !important;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            align-items: center;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: var(--border-color);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+            color: #6c757d;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        @media (max-width: 992px) {
+            .layout {
+                flex-direction: column;
+            }
+            
+            .input-panel, 
+            .output-panel {
+                width: 100%;
+            }
+            
+            .input-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>一致答案数提取</h1>
+            <div class="header-right">
+                <div class="app-version">v1.0.0</div>
+            </div>
+        </header>
+        
+        <div class="layout">
+            <div class="input-panel">
+                <h2 class="panel-title">输入数据</h2>
+                
+                <div class="tabs">
+                    <div class="tab active" data-tab="excel">Excel 批量提取</div>
+                    <div class="tab" data-tab="text">单文本提取</div>
+                </div>
+                
+                <div class="tab-content active" id="excel-tab">
+                    <div class="upload-area" id="drop-area">
+                        <div>
+                            <i>📤</i>
+                            <h3>上传Excel文件</h3>
+                            <p>点击或拖拽Excel文件到此处上传</p>
+                            <p class="small">支持.xlsx格式，需包含"id"和"content"列</p>
+                        </div>
+                    </div>
+                    <input type="file" id="file-input" accept=".xlsx" style="display: none;">
+                    
+                    <div class="form-group">
+                        <label><strong>文件信息</strong></label>
+                        <div id="file-info">未选择文件</div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="text-tab">
+                    <div class="form-group">
+                        <label><strong>文本内容</strong></label>
+                        <textarea id="text-input" placeholder="请输入需要处理的内容..."></textarea>
+                    </div>
+                    <button class="btn" id="process-text">提取一致答案数</button>
+                </div>
+                
+                <div class="btn-container">
+                    <button class="btn" id="process-btn">处理数据</button>
+                    <button class="btn btn-success" id="export-btn" disabled>导出结果</button>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">未开始</div>
+                </div>
+            </div>
+            
+            <div class="output-panel">
+                <h2 class="panel-title">提取结果</h2>
+                
+                <div id="result-stats"></div>
+                
+                <div class="status-bar" id="status-bar">
+                    等待处理数据...
+                </div>
+                
+                <div class="results-container">
+                    <table class="results-table" id="results-table">
+                        <thead>
+                            <tr>
+                                <th width="10%">ID</th>
+                                <th>内容</th>
+                                <th width="10%">一致答案数</th>
+                                <th width="15%">提取状态</th>
+                                <th width="15%">异常信息</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                            <!-- 结果将通过JavaScript动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination">
+                    <div>显示 <span id="current-start">0</span> - <span id="current-end">0</span> 条结果，共 <span id="total-results">0</span> 条</div>
+                    <div class="pagination-controls">
+                        <button class="btn" id="prev-btn" disabled>上一页</button>
+                        <button class="btn" id="next-btn" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2025-07-11
+        </footer>
+    </div>
+
+    <script>
+        // 当前状态变量
+        let currentTab = 'excel';
+        let currentFile = null;
+        let processedData = [];
+        let extractedData = [];
+        let currentPage = 1;
+        const pageSize = 20;
+        
+        // DOM元素引用
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const fileInput = document.getElementById('file-input');
+        const dropArea = document.getElementById('drop-area');
+        const fileInfo = document.getElementById('file-info');
+        const processBtn = document.getElementById('process-btn');
+        const exportBtn = document.getElementById('export-btn');
+        const textProcessBtn = document.getElementById('process-text');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const statusBar = document.getElementById('status-bar');
+        const resultsBody = document.getElementById('results-body');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const currentStart = document.getElementById('current-start');
+        const currentEnd = document.getElementById('current-end');
+        const totalResults = document.getElementById('total-results');
+        const resultStats = document.getElementById('result-stats');
+        
+        // 选项卡切换
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+                currentTab = tab.dataset.tab;
+                
+                // 重置进度和状态
+                resetProgress();
+            });
+        });
+        
+        // 文件上传功能
+        dropArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        // 拖拽功能
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        dropArea.addEventListener('drop', handleDrop, false);
+        
+        // 按钮事件监听
+        processBtn.addEventListener('click', processData);
+        exportBtn.addEventListener('click', exportData);
+        textProcessBtn.addEventListener('click', processText);
+        prevBtn.addEventListener('click', () => navigatePage(-1));
+        nextBtn.addEventListener('click', () => navigatePage(1));
+        
+        // 辅助函数
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        function highlight() {
+            dropArea.style.borderColor = '#3498db';
+            dropArea.style.backgroundColor = 'rgba(52, 152, 219, 0.1)';
+        }
+        
+        function unhighlight() {
+            dropArea.style.borderColor = '#dee2e6';
+            dropArea.style.backgroundColor = '';
+        }
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        }
+        
+        function handleFileSelect() {
+            const files = fileInput.files;
+            if (files.length === 0) return;
+            
+            currentFile = files[0];
+            fileInfo.innerHTML = `
+                <div>文件名: ${currentFile.name}</div>
+                <div>大小: ${formatBytes(currentFile.size)}</div>
+            `;
+            
+            // 读取Excel文件
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // 将Excel数据转为JSON
+                processedData = XLSX.utils.sheet_to_json(worksheet);
+                
+                // 重置UI
+                resetProgress();
+                exportBtn.disabled = true;
+            };
+            reader.readAsArrayBuffer(currentFile);
+        }
+        
+        // 核心提取逻辑 - 与Python版本一致
+        function extractUnifiedAnswer(content) {
+            if (!content) return null;
+            
+            // 正则表达式模式（与Python版本完全相同）
+            const patterns = [
+                // 原有规则保持不变
+                /\*\*一致答案数\*\*[：:]\s*`(\d+)`/,            // 匹配 **一致答案数**：`3`
+                /一致答案数[：:]\s*`(\d+)`/,                     // 匹配 一致答案数：`3`
+                /\*\*一致答案数\*\*[：:]\s*\*\*(\d+)\*\*/,      // 匹配 **一致答案数**：**3**
+                /一致答案数[：:]\s*\*\*(\d+)\*\*/,               // 匹配 一致答案数：**3**
+                /一致答案数[：:]\s*(\d+)/,                       // 匹配 一致答案数：3
+                
+                // 新增规则（解决示例中的格式问题）
+                /- 一致答案数：`\$\$(\d+)\$\$`/,                 // 匹配 - 一致答案数：`[0]`（新增规则1）
+                /一致答案数：`\$\$(\d+)\$\$`/,                   // 匹配 一致答案数：`[0]`（新增规则2）
+                /- 一致答案数：\s*`(\d+)`/,                     // 匹配 - 一致答案数：`0`（新增规则3）
+                
+                // 新增宽松匹配规则
+                /一致答案数[：:].*?(\d+)/                        // 宽松匹配（新增规则4）
+            ];
+            
+            for (let pattern of patterns) {
+                const match = content.match(pattern);
+                if (match && match[1]) {
+                    return {
+                        value: parseInt(match[1]),
+                        status: 'success',
+                        message: '匹配成功'
+                    };
+                }
+            }
+            
+            const errorContext = content.length > 100 ? content.substring(0, 100) + "..." : content;
+            return {
+                value: null,
+                status: 'error',
+                message: `未找到一致答案数字段（内容片段：${errorContext}）`
+            };
+        }
+        
+        function processData() {
+            if (!processedData.length) {
+                updateStatusBar('请先上传Excel文件并等待文件解析完成', 'warning');
+                return;
+            }
+            
+            resetProgress();
+            updateStatusBar('开始处理数据...', 'warning');
+            
+            extractedData = [];
+            const totalItems = processedData.length;
+            let successCount = 0;
+            let errorCount = 0;
+            let processedCount = 0;
+            
+            const interval = setInterval(() => {
+                // 处理一批数据（分批处理以保持UI响应）
+                const batchSize = 10;
+                const endIndex = Math.min(processedCount + batchSize, totalItems);
+                
+                for (let i = processedCount; i < endIndex; i++) {
+                    const row = processedData[i];
+                    processedCount++;
+                    
+                    const result = extractUnifiedAnswer(row.content);
+                    const item = {
+                        id: row.id || '',
+                        content: row.content || '',
+                        unifiedAnswer: result.value,
+                        status: result.status,
+                        message: result.message
+                    };
+                    
+                    if (result.status === 'success') {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                    
+                    extractedData.push(item);
+                }
+                
+                // 更新进度条
+                const progressPercent = (processedCount / totalItems) * 100;
+                progressBar.style.width = `${progressPercent}%`;
+                progressText.textContent = `处理中: ${processedCount}/${totalItems} (${successCount}成功, ${errorCount}失败)`;
+                
+                if (processedCount >= totalItems) {
+                    clearInterval(interval);
+                    progressText.textContent = `处理完成: ${processedCount}/${totalItems} (${successCount}成功, ${errorCount}失败)`;
+                    
+                    // 生成统计信息
+                    const statsHTML = `
+                        <div class="status-bar success">
+                            <strong>处理完成！</strong> 成功提取: ${successCount}条，失败: ${errorCount}条
+                        </div>
+                        <div style="margin-top: 10px">
+                            <strong>处理时间:</strong> ${new Date().toLocaleString()}
+                        </div>
+                    `;
+                    resultStats.innerHTML = statsHTML;
+                    
+                    updateStatusBar(`处理完成！成功: ${successCount}条，失败: ${errorCount}条`, 'success');
+                    exportBtn.disabled = false;
+                    
+                    // 显示第一页结果
+                    displayResultsPage(1);
+                }
+            }, 50); // 通过调整间隔时间控制处理速度
+        }
+        
+        function processText() {
+            const text = document.getElementById('text-input').value;
+            if (!text.trim()) {
+                updateStatusBar('请输入要处理的文本内容', 'error');
+                return;
+            }
+            
+            const result = extractUnifiedAnswer(text);
+            
+            // 构建结果数组（为了兼容显示）
+            extractedData = [{
+                id: 'TEXT001',
+                content: text.length > 100 ? text.substring(0, 100) + "..." : text,
+                unifiedAnswer: result.value,
+                status: result.status,
+                message: result.status === 'success' ? '匹配成功' : result.message
+            }];
+            
+            // 显示结果
+            displayResultsPage(1);
+            
+            // 更新状态栏
+            if (result.status === 'success') {
+                updateStatusBar(`成功提取：一致答案数 = ${result.value}`, 'success');
+                const statsHTML = `
+                    <div class="status-bar success">
+                        <strong>处理完成！</strong> 成功提取到一致答案数
+                    </div>
+                    <div style="margin-top: 10px">
+                        <strong>处理时间:</strong> ${new Date().toLocaleString()}
+                    </div>
+                `;
+                resultStats.innerHTML = statsHTML;
+            } else {
+                updateStatusBar('未能提取一致答案数: ' + result.message, 'error');
+            }
+            
+            exportBtn.disabled = false;
+        }
+        
+        function displayResultsPage(page) {
+            currentPage = page;
+            const startIndex = (page - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, extractedData.length);
+            const pageData = extractedData.slice(startIndex, endIndex);
+            
+            // 清空之前的结果
+            resultsBody.innerHTML = '';
+            
+            // 填充表格
+            pageData.forEach(item => {
+                const row = document.createElement('tr');
+                
+                if (item.status === 'error') {
+                    row.classList.add('error-row');
+                }
+                
+                row.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.unifiedAnswer !== null ? item.unifiedAnswer : 'N/A'}</td>
+                    <td>
+                        <span class="status-badge ${item.status === 'success' ? 'success-badge' : 'error-badge'}">
+                            ${item.status === 'success' ? '成功' : '失败'}
+                        </span>
+                    </td>
+                    <td>${item.content.length > 150 ? item.content.substring(0, 150) + '...' : item.content}</td>
+                    <td>${item.message || '-'}</td>
+                `;
+                
+                resultsBody.appendChild(row);
+            });
+            
+            // 更新分页信息
+            currentStart.textContent = startIndex + 1;
+            currentEnd.textContent = endIndex;
+            totalResults.textContent = extractedData.length;
+            
+            // 更新分页按钮状态
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = endIndex >= extractedData.length;
+        }
+        
+        function navigatePage(direction) {
+            const newPage = currentPage + direction;
+            if (newPage >= 1 && newPage <= Math.ceil(extractedData.length / pageSize)) {
+                displayResultsPage(newPage);
+            }
+        }
+        
+        function exportData() {
+            if (extractedData.length === 0) {
+                updateStatusBar('没有数据可导出', 'error');
+                return;
+            }
+            
+            // 创建工作表
+            const ws = XLSX.utils.json_to_sheet(extractedData.map(item => ({
+                'ID': item.id,
+                '一致答案数': item.unifiedAnswer,
+                '内容': item.content,
+                '是否异常': item.status === 'success' ? '否' : '是',
+                '异常信息': item.message || ''
+            })));
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '提取结果');
+            
+            // 添加处理时间
+            const now = new Date();
+            const timeStr = now.toISOString().slice(0, 19).replace(/[:T]/g, '-');
+            
+            // 导出为Excel
+            XLSX.writeFile(wb, `一致答案数提取结果_${timeStr}.xlsx`);
+            
+            updateStatusBar(`结果已成功导出为Excel文件`, 'success');
+        }
+        
+        function resetProgress() {
+            progressBar.style.width = '0%';
+            progressText.textContent = '未开始';
+            statusBar.className = 'status-bar';
+            statusBar.textContent = '等待处理数据...';
+            resultsBody.innerHTML = '';
+            resultStats.innerHTML = '';
+            currentStart.textContent = '0';
+            currentEnd.textContent = '0';
+            totalResults.textContent = '0';
+        }
+        
+        function updateStatusBar(message, type) {
+            statusBar.className = 'status-bar';
+            if (type) statusBar.classList.add(type);
+            statusBar.textContent = message;
+        }
+        
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
